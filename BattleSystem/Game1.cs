@@ -27,6 +27,7 @@ namespace BattleSystem
         Gui,
         Main,
         FX,
+        Debug,
         Count
     }
 
@@ -183,14 +184,20 @@ namespace BattleSystem
             ScreenManager.EndDraw();
 
 
+            ScreenManager.BeginDraw((int)Layers.Debug, SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap);
+            ScreenManager.DrawLayer((int)Layers.Debug, gameTime);
+            ScreenManager.EndDraw();
+
+
             ScreenManager.BeginShow(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap);
             ScreenManager.ShowLayer((int)Layers.FX, Color.White);
             ScreenManager.ShowLayer((int)Layers.Main, Color.White);
+            ScreenManager.ShowLayer((int)Layers.Debug, Color.White);
+
             if (_isShowGui)
                 ScreenManager.ShowLayer((int)Layers.Gui, Color.White);
 
             FrameCounter.Draw(_batch, _fontMain, Color.Yellow, 10, 10);
-            GFX.LeftTopBorderedString(_batch, _fontMain, $"{_screenPlay.NbActive()} - {_screenPlay.NbNode()}", 10, 30, Color.White, Color.Red);
 
             ScreenManager.EndShow();
 

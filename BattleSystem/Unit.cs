@@ -31,7 +31,7 @@ namespace BattleSystem
         public int _ticMove;
         public int _tempoMove;
 
-        Arena _arena;
+        public Arena _arena;
 
         int _mapGoalX;
         int _mapGoalY;
@@ -39,8 +39,8 @@ namespace BattleSystem
         int _mapW;
         int _mapH;
 
-        int _mapX;
-        int _mapY;
+        public int _mapX;
+        public int _mapY;
 
         int _cellW;
         int _cellH;
@@ -118,6 +118,9 @@ namespace BattleSystem
         {
             UpdateRect();
 
+            _mapX = (int)((_x+_cellW/2)/_cellW);
+            _mapY = (int)((_y+_cellH/2)/_cellH);
+
             switch (_state)
             {
                 case State.NONE:
@@ -133,12 +136,14 @@ namespace BattleSystem
                         Arena.CurrentDragged = this;
                         _isDropped = false;
 
+                        _arena.SetCellUnit(_mapX, _mapY, null);
+
                     }
                     else
                     {
                         if (_isDroppable)
                         {
-                            MoveTo(_dropZone._rect.TopLeft - _parent.XY);
+                            MoveTo(_dropZone._rect.TopLeft - _parent.XY, 10);
                             SetState(State.MOVE);
                         }
                     }
@@ -152,19 +157,15 @@ namespace BattleSystem
                     _ticMove++;
                     if (_ticMove >= _tempoMove)
                     {
-                        _x = _to.X;
-                        _y = _to.Y;
-
-                        //OnGoal = true;
-                        //IsGoal = true;
+                        _arena.SetCellUnit(_mapX, _mapY, this);
 
                         SetState(State.WAIT);
 
+                        _x = _to.X;
+                        _y = _to.Y;
+
                         _mapX = _toMap.X;
                         _mapY = _toMap.Y;
-
-                        //_ticAction = 0;
-                        //_directionX = 0;
 
                         if (_isDroppable)
                         {
@@ -199,9 +200,14 @@ namespace BattleSystem
 
                 batch.Draw(Game1._texAvatar1x1, AbsXY, Color.White);
 
-                if (_isDroppable)
-                    GFX.Rectangle(batch, AbsRect, Color.Red * .5f, 2f);
+                //if (_isDroppable)
+                //    GFX.Rectangle(batch, AbsRect, Color.Red * .5f, 2f);
                     //batch.Draw(Game1._texAvatar1x1, AbsXY, Color.Yellow);
+            }
+
+            if (indexLayer == (int)Layers.Debug)
+            {
+                //GFX.CenterStringXY(batch, Game1._fontMain, $"{_mapX}:{_mapY}", AbsRectF.TopCenter, Color.Yellow);
             }
 
             return base.Draw(batch, gameTime, indexLayer);

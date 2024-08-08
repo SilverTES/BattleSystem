@@ -58,6 +58,8 @@ namespace BattleSystem
             _mouse.X = _game._mouse.X;
             _mouse.Y = _game._mouse.Y;
 
+            _game.IsMouseVisible = !_mouseControl._isActiveDrag;
+
             UpdateChilds(gameTime);
 
             return base.Update(gameTime);
@@ -65,12 +67,11 @@ namespace BattleSystem
 
         public override Node Draw(SpriteBatch batch, GameTime gameTime, int indexLayer)
         {
-            batch.Draw(Game1._texBackground, AbsRect, Color.White * .5f);
             batch.GraphicsDevice.Clear(Color.Transparent);
-            
 
             if (indexLayer == (int)Layers.Main)
             {
+                batch.Draw(Game1._texBackground, AbsRect, Color.White * .5f);
                 
                 //GFX.Grid(batch, 0, 0, Game1.ScreenW, Game1.ScreenH, CellW, CellH, Color.Gray * .25f, 3);
                 //GFX.Grid(batch, 0, 0, Game1.ScreenW, Game1.ScreenH, CellW, CellH, Color.Black * .5f, 1);
@@ -86,6 +87,7 @@ namespace BattleSystem
                 //GFX.RectangleEx(batch, new Vector2(340, 200), new RectangleF(80, 60), new Vector2(-40,-30), Color.Green, Geo.RAD_45, 2, true);
 
                 DrawChilds(batch, gameTime, indexLayer);
+                GFX.LeftTopBorderedString(batch, Game1._fontMain, $"{_arena.NbActive()} - {_arena.NbNode()}", 10, 30, Color.White, Color.Red);
             }
 
             if (indexLayer == (int)Layers.FX)
@@ -94,6 +96,11 @@ namespace BattleSystem
 
                 //GFX.Sight(batch, _mouse, Game1.ScreenW, Game1.ScreenH, Color.Red * .5f, 3f);
                 //GFX.Sight(batch, _mouse, Game1.ScreenW, Game1.ScreenH, Color.Yellow, 1f);
+            }
+
+            if (indexLayer == (int)Layers.Debug)
+            {
+                DrawChilds(batch, gameTime, indexLayer);
             }
 
             return base.Draw(batch, gameTime, indexLayer);
