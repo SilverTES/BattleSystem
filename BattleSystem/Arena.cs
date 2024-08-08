@@ -254,10 +254,10 @@ namespace BattleSystem
 
             _dropZoneManager.Update(gameTime, _listItems);
 
-            if (_isMouseOver)
+            if (_isMouseOver && _mouseControl._down)
             {
                 Rectangle rectOriginal = new Rectangle(_cursor.ToPoint() + new Point(AbsX, AbsY), new Point(_cellW, _cellH));
-                _dropZoneInGrid.UpdateZone(rectOriginal, -10);
+                _dropZoneInGrid.UpdateZone(rectOriginal, 0);
             }
 
             return base.Update(gameTime);
@@ -302,13 +302,10 @@ namespace BattleSystem
                 if (_isMouseOver)
                 {
                     Rectangle rectOriginal = new Rectangle(_cursor.ToPoint() + new Point(AbsX, AbsY), new Point(_cellW, _cellH));
-
-                    
-
                     RectangleF rectCursor = ((RectangleF)rectOriginal).Extend(_loop._current);
 
                     GFX.FillRectangle(batch, rectCursor, Color.LightSteelBlue * .5f);
-                    GFX.Rectangle(batch, rectCursor, Color.LightSteelBlue * .75f, 2f);
+                    GFX.Rectangle(batch, rectCursor, Color.LightSteelBlue * 1f, 4f);
 
                     //System.Console.Write("<Mouse in>");
                 }

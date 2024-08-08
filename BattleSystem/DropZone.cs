@@ -55,9 +55,6 @@ namespace BattleSystem
                             {
                                 var unit = item.This<Unit>();
                                 
-                                //if (unit._draggable._isDragged && _containedNode != null)
-                                //    _containedNode = null;
-
                                 if (!unit._isDropped)
                                 {
                                     unit._dropZone = this;
@@ -101,7 +98,10 @@ namespace BattleSystem
                     GFX.Rectangle(batch, _rectNear, Color.Violet * .5f * alpha, 2f);
 
                 if (_containedNode != null)
-                    GFX.CenterStringXY(batch, Game1._fontMain, $"{_containedNode}{_containedNode._index}", _rect.TopCenter + new Vector2(0, -10), Color.Gold);
+                {
+                    //GFX.CenterStringXY(batch, Game1._fontMain, $"{_containedNode}{_containedNode._index}", _rect.TopCenter + new Vector2(0, -10), Color.Gold);
+                    GFX.Rectangle(batch, _rect, Color.Black * .75f * alpha, 4f);
+                }
                 
             }
 
