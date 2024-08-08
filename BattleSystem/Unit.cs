@@ -36,8 +36,8 @@ namespace BattleSystem
         int _mapGoalX;
         int _mapGoalY;
 
-        int _mapW;
-        int _mapH;
+        int _sizeW;
+        int _sizeH;
 
         public int _mapX;
         public int _mapY;
@@ -54,17 +54,17 @@ namespace BattleSystem
 
         public DropZone _dropZone;
 
-        public Unit(MouseControl mouse, Arena arena, int mapW, int mapH, int cellW, int cellH) 
+        public Unit(MouseControl mouse, Arena arena, int sizeW, int sizeH, int cellW, int cellH) 
         {
             _type = UID.Get<Unit>();
             _mouse = mouse;
             _arena = arena;
-            _mapW = mapW;
-            _mapH = mapH;
+            _sizeW = sizeW;
+            _sizeH = sizeH;
             _cellW = cellW;
             _cellH = cellH;
 
-            SetSize(_mapW * _cellW, _mapH * _cellH);
+            SetSize(_sizeW * _cellW, _sizeH * _cellH);
 
             _draggable = new Addon.Draggable(this, _mouse);
             _draggable.SetDragRectNode(true);
@@ -202,7 +202,7 @@ namespace BattleSystem
 
                 //if (_isDroppable)
                 //    GFX.Rectangle(batch, AbsRect, Color.Red * .5f, 2f);
-                    //batch.Draw(Game1._texAvatar1x1, AbsXY, Color.Yellow);
+                //batch.Draw(Game1._texAvatar1x1, AbsXY, Color.Yellow);
             }
 
             if (indexLayer == (int)Layers.Debug)

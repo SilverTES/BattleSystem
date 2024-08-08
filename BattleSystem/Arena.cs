@@ -7,7 +7,6 @@ using Mugen.Input;
 using Mugen.Physics;
 using System;
 using System.Collections.Generic;
-
 namespace BattleSystem
 {
 
@@ -145,6 +144,7 @@ namespace BattleSystem
 
 
             _dropZoneManager = new DropZoneManager();
+            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120, 64, 64), -10, _droppables));
             _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 200, 64, 64), -10, _droppables));
             _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 280, 64, 64), -10, _droppables));
             _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 360, 64, 64), -10, _droppables));
@@ -152,6 +152,13 @@ namespace BattleSystem
             _dropZoneInGrid = new DropZone(new Rectangle(0, 0, 64, 64), -10, _droppables);
             _dropZoneInGrid.Show(false);
             _dropZoneManager.AddZone(_dropZoneInGrid);
+        }
+        public void AddUnit(int mapX, int mapY, int sizeW, int sizeH)
+        {
+            var unit = new Unit(_mouseControl, this, sizeW, sizeH, _cellW, _cellH);
+            unit.SetMapPosition(mapX, mapY).AppendTo(this);
+
+            SetCellUnit(mapX, mapY, unit);
         }
         public void SetCell(int mapX, int mapY, Cell cell)
         {

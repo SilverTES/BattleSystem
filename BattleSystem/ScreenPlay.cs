@@ -44,10 +44,10 @@ namespace BattleSystem
         {
             InitChilds();
 
-            new Unit(_mouseControl, _arena, 1, 1, CellW, CellH).This<Unit>().SetMapPosition(2,1).AppendTo(_arena);
-            new Unit(_mouseControl, _arena, 1, 1, CellW, CellH).This<Unit>().SetMapPosition(6,4).AppendTo(_arena);
-            new Unit(_mouseControl, _arena, 1, 1, CellW, CellH).This<Unit>().SetMapPosition(8,6).AppendTo(_arena);
-            
+            _arena.AddUnit(2, 1, 1, 1);
+            _arena.AddUnit(6, 5, 1, 1);
+            _arena.AddUnit(8, 6, 1, 1);
+            _arena.AddUnit(10, 2, 1, 1);
 
             return base.Init();
         }

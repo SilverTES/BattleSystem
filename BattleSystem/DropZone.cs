@@ -74,7 +74,7 @@ namespace BattleSystem
 
             if (_containedNode != null)
             {
-                if ((_containedNode._rect + _containedNode._parent.XY != _rect)) // Test if item is left the zone
+                if ((_containedNode._rect + _containedNode._parent.XY != _rect)) // Test if item is left the zone and dropZone contain a Node !
                 {
                     _containedNode = null;
                 }
