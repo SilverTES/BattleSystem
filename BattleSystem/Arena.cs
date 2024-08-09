@@ -5,7 +5,6 @@ using Mugen.Core;
 using Mugen.GFX;
 using Mugen.Input;
 using Mugen.Physics;
-using System;
 using System.Collections.Generic;
 namespace BattleSystem
 {
@@ -22,17 +21,12 @@ namespace BattleSystem
         Point _mapPosition;
         Point _size;
 
-        //int _width = 0;
-        //int _height = 0;
-
         public bool _isMouseOver = false;
         public bool _isSelected = false;
         public Cell(Point mapPosition, Point size) 
         { 
             _mapPosition = mapPosition;
             _size = size;
-            //_width = width;
-            //_height = height;
 
             _position.X = _mapPosition.X * _size.X;
             _position.Y = _mapPosition.Y * _size.Y;
@@ -181,6 +175,13 @@ namespace BattleSystem
             
             return _cells[mapX, mapY];
         }
+        public Unit GetCellUnit(int mapX, int mapY)
+        {
+            if (mapX < 0 || mapX > _mapW || mapY < 0 || mapY > _mapH)
+                return null;
+
+            return _cells[mapX, mapY]._unit;
+        }
         private void ResetCells()
         {
             for (int i = 0; i < _cellW; i++)
@@ -301,7 +302,9 @@ namespace BattleSystem
             if (_isMouseOver && _mouseControl._down)
             {
                 Rectangle rectOriginal = new Rectangle(_cursor.ToPoint() + new Point(AbsX, AbsY), new Point(_cellW, _cellH));
-                _dropZoneInGrid.UpdateZone(rectOriginal, 10);
+
+                //if (GetCellUnit(_mapCursor.X, _mapCursor.Y) == null)
+                    _dropZoneInGrid.UpdateZone(rectOriginal, -10);
             }
 
             return base.Update(gameTime);
@@ -369,6 +372,8 @@ namespace BattleSystem
 
                     if (_cells[i, j]._unit != null)
                         GFX.LeftTopBorderedString(batch, Game1._fontMain, $"{_cells[i, j]._unit._index}", pos, Color.Yellow, Color.Red);
+                    else
+                        GFX.LeftTopBorderedString(batch, Game1._fontMain, ".", pos, Color.Yellow, Color.Red);
                 }
             }
 
@@ -376,8 +381,8 @@ namespace BattleSystem
             {
                 Rectangle rectOriginal = new Rectangle(_cursor.ToPoint() + new Point(AbsX, AbsY), new Point(_cellW, _cellH));
                 //RectangleF rectCursor = ((RectangleF)rectOriginal).Extend(_loop._current);
-
-                GFX.TopCenterString(batch, Game1._fontMain, $"{_cells[_mapCursor.X, _mapCursor.Y]._unit}", ((RectangleF)rectOriginal).BottomCenter, Color.Red * .75f);
+                var unit = _cells[_mapCursor.X, _mapCursor.Y]._unit;
+                GFX.TopCenterString(batch, Game1._fontMain, $"{unit} {unit?._index}", ((RectangleF)rectOriginal).BottomCenter, Color.Red * .75f);
             }
         }
 

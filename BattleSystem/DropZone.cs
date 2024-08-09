@@ -1,9 +1,9 @@
-﻿using ImGuiNET;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Mugen.Core;
 using Mugen.GFX;
 using Mugen.Physics;
+using System;
 using System.Collections.Generic;
 
 namespace BattleSystem
@@ -13,6 +13,7 @@ namespace BattleSystem
         bool _isShow = true;
 
         public RectangleF _rect = new();
+
         public RectangleF _rectNear = new();
         public Node _nearNode = null;
         public Node _containedNode = null;
@@ -28,7 +29,7 @@ namespace BattleSystem
             _rectNear = _rect.Extend(nearZoneSize);
         }
 
-        public void Show(bool isShow) 
+        public void Show(bool isShow)
         { 
             _isShow = isShow;
         }
@@ -37,6 +38,7 @@ namespace BattleSystem
             _rect = rect;
             _rectNear = _rect.Extend(nearZoneSize);
         }
+
         public void Update(GameTime gameTime, List<Node> nodeToCheck)
         {
             _isNearNode = false;
@@ -57,10 +59,11 @@ namespace BattleSystem
                                 
                                 if (!unit._isDropped)
                                 {
-                                    unit._dropZone = this;
-
                                     if (_containedNode == null)
+                                    {
+                                        unit._dropZone = this;
                                         unit._isDroppable = true;
+                                    }
 
                                 }
 
@@ -77,6 +80,7 @@ namespace BattleSystem
                 if ((_containedNode._rect + _containedNode._parent.XY != _rect)) // Test if item is left the zone and dropZone contain a Node !
                 {
                     _containedNode = null;
+                    Console.Write("<Retired contained Node>");
                 }
             }
 
@@ -99,7 +103,7 @@ namespace BattleSystem
 
                 if (_containedNode != null)
                 {
-                    //GFX.CenterStringXY(batch, Game1._fontMain, $"{_containedNode}{_containedNode._index}", _rect.TopCenter + new Vector2(0, -10), Color.Gold);
+                    GFX.CenterStringXY(batch, Game1._fontMain, $"{_containedNode}{_containedNode._index}", _rect.TopCenter + new Vector2(0, -10), Color.Gold);
                     GFX.Rectangle(batch, _rect, Color.Black * .75f * alpha, 4f);
                 }
                 

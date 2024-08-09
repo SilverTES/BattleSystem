@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Mugen.Animation;
 using Mugen.Core;
@@ -41,6 +42,10 @@ namespace BattleSystem
 
         public int _mapX;
         public int _mapY;
+        
+        // Come back to prev map position when drop in case is not possible
+        int _prevMapX;
+        int _prevMapY;
 
         int _cellW;
         int _cellH;
@@ -136,16 +141,46 @@ namespace BattleSystem
                         Arena.CurrentDragged = this;
                         _isDropped = false;
 
-                        _arena.SetCellUnit(_mapX, _mapY, null);
+                        // test si l'unit dragué est le même unit dans la case , si oui on enlève l'unit de la case
+                        var cellOver = _arena.GetCell(_mapX, _mapY);
+                        if (cellOver != null)
+                            if (cellOver._unit != null)
+                            {
+                                if (Arena.CurrentDragged._index == cellOver._unit._index)
+                                    _arena.SetCellUnit(_mapX, _mapY, null);
+                            }
 
                     }
-                    else
+                    
+                    if (_draggable._onDrag)
                     {
-                        if (_isDroppable)
+                        _prevMapX = _mapX;
+                        _prevMapY = _mapY;
+                    }
+                    
+                    if (_draggable._offDrag)
+                    {
+                        Console.Write("< offDrag >");
+
+                        bool isPossibleToDrop = false;
+
+                        var cellOver = _arena.GetCell(_mapX, _mapY);
+                        if (cellOver != null)
+                            if (_isDroppable && cellOver._unit == null )
+                            {
+                                MoveTo(_dropZone._rect.TopLeft - _parent.XY, 8);
+                                SetState(State.MOVE);
+                                isPossibleToDrop = true;
+                            }
+
+                        if (!isPossibleToDrop)
                         {
-                            MoveTo(_dropZone._rect.TopLeft - _parent.XY, 10);
+                            Vector2 prevPosition = new Vector2(_prevMapX * _cellW, _prevMapY * _cellH);
+
+                            MoveTo( prevPosition, 8);
                             SetState(State.MOVE);
                         }
+
                     }
 
                     break;
