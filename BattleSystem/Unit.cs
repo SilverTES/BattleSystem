@@ -88,14 +88,14 @@ namespace BattleSystem
         {
             _state = state;
         }
-        public void MoveTo(int mapGoalX, int mapGoalY, int durationMove = 10)
-        {
-            _mapGoalX = mapGoalX;
-            _mapGoalY = mapGoalY;
+        //public void MoveTo(int mapGoalX, int mapGoalY, int durationMove = 10)
+        //{
+        //    _mapGoalX = mapGoalX;
+        //    _mapGoalY = mapGoalY;
 
-            _ticMove = 0;
-            _tempoMove = durationMove;
-        }
+        //    _ticMove = 0;
+        //    _tempoMove = durationMove;
+        //}
 
         public void MoveTo(Vector2 goal, int durationMove = 10)
         {
@@ -134,6 +134,9 @@ namespace BattleSystem
                 case State.NONE:
                     break;
                 case State.WAIT:
+
+                    _draggable.SetDraggable(true);
+
                     if (_navi._isMouseOver && _mouse._onClick && !_mouse._isOverAny && !_mouse._isActiveReSize)
                     {
                         _parent.GotoFront(_index);
@@ -220,6 +223,8 @@ namespace BattleSystem
                     break;
                 case State.MOVE:
 
+                    _draggable.SetDraggable(false);
+
                     _x = Easing.GetValue(Easing.QuarticEaseOut, _ticMove, _from.X, _to.X, _tempoMove); // QuadraticEaseOut au lieu de Q***InOut pour eviter bug de détection de la dropZone _isNear car le mouvement est trop rapide a la fin
                     _y = Easing.GetValue(Easing.QuarticEaseOut, _ticMove, _from.Y, _to.Y, _tempoMove);
 
@@ -263,7 +268,7 @@ namespace BattleSystem
         {
             if (indexLayer == (int)Layers.Main)
             {
-                GFX.FillRectangle(batch, AbsRect, Color.Black * .5f);
+                GFX.FillRectangle(batch, AbsRectF.Extend(-4), Color.Black * .8f);
 
                 if (_draggable._isDragged)
                     GFX.Rectangle(batch, AbsRect, Color.Orange * .5f, 2f);
@@ -284,9 +289,13 @@ namespace BattleSystem
             {
                 if (_state == State.MOVE) 
                 {
-                    GFX.Line(batch, _from + _parent.XY + new Vector2(_cellW/2, _cellH/2), AbsXY + new Vector2(_cellW / 2, _cellH / 2), Color.White * .8f, _cellW/4);
-                    GFX.Line(batch, _from + _parent.XY + new Vector2(_cellW/2, _cellH/2), AbsXY + new Vector2(_cellW / 2, _cellH / 2), Color.White * .8f, _cellW/8);
-                    GFX.Line(batch, _from + _parent.XY + new Vector2(_cellW/2, _cellH/2), AbsXY + new Vector2(_cellW / 2, _cellH / 2), Color.White * .8f, _cellW/16);
+                    float alpha = _tempoMove/(float)(_ticMove*5+.01f);
+
+                    GFX.Line(batch, _from + _parent.XY + new Vector2(_cellW/2, _cellH/2), AbsXY + new Vector2(_cellW / 2, _cellH / 2), Color.White * alpha, _cellW/2);
+                    GFX.Line(batch, _from + _parent.XY + new Vector2(_cellW/2, _cellH/2), AbsXY + new Vector2(_cellW / 2, _cellH / 2), Color.White * alpha, _cellW/3);
+                    GFX.Line(batch, _from + _parent.XY + new Vector2(_cellW/2, _cellH/2), AbsXY + new Vector2(_cellW / 2, _cellH / 2), Color.White * alpha, _cellW/4);
+                    GFX.Line(batch, _from + _parent.XY + new Vector2(_cellW/2, _cellH/2), AbsXY + new Vector2(_cellW / 2, _cellH / 2), Color.White * alpha, _cellW/5);
+
                 }
             }
 

@@ -368,10 +368,10 @@ namespace BattleSystem
             {
                 for (int j = 0; j < _mapH; j++)
                 {
-                    Vector2 pos = new Vector2(i * _cellW, j * _cellH) + AbsXY + new Vector2(6, 2);
+                    Vector2 pos = new Vector2(i * _cellW, j * _cellH) + AbsXY + new Vector2(_cellW/2, 2);
 
                     if (_cells[i, j]._unit != null)
-                        GFX.LeftTopBorderedString(batch, Game1._fontMain, $"{_cells[i, j]._unit._index}", pos, Color.Yellow, Color.Red);
+                        GFX.CenterBorderedStringXY(batch, Game1._fontMain, $"{_cells[i, j]._unit._index}", pos, Color.Yellow, Color.Red);
                     //else
                     //    GFX.LeftTopBorderedString(batch, Game1._fontMain, ".", pos, Color.Yellow, Color.Red);
                 }

@@ -78,7 +78,7 @@ namespace BattleSystem
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
             Window.AllowUserResizing = true;
-            Window.Title = $" Resolution = {ScreenW}x{ScreenH}";
+            Window.Title = $"-- Native Resolution = {ScreenW}x{ScreenH}";
 
             _imGuiRenderer = new ImGuiRenderer(this);
             _imGuiRenderer.RebuildFontAtlas();
