@@ -138,10 +138,11 @@ namespace BattleSystem
 
 
             _dropZoneManager = new DropZoneManager();
-            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120, _cellW, _cellH), -10, _droppables));
-            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 280, _cellW, _cellH), -10, _droppables));
-            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 440, _cellW, _cellH), -10, _droppables));
-            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 620, _cellW, _cellH), -10, _droppables));
+            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 0, _cellW, _cellH), -10, _droppables));
+            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 1, _cellW, _cellH), -10, _droppables));
+            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 2, _cellW, _cellH), -10, _droppables));
+            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 3, _cellW, _cellH), -10, _droppables));
+            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 4, _cellW, _cellH), -10, _droppables));
 
             _dropZoneInGrid = new DropZone(new Rectangle(0, 0, _cellW, _cellH), -10, _droppables);
             _dropZoneInGrid.Show(false);
@@ -313,14 +314,13 @@ namespace BattleSystem
         {
             SortZDescending();
 
-
             if (indexLayer == (int)Layers.Main)
             {
                 //GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .1f);
 
-                GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .05f);
-                GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Gray * .25f, 6);
-                GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Black * .5f, 3);
+                GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .2f);
+                GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Gray * .25f, 3);
+                GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Black * .5f, 1);
                 GFX.Rectangle(batch, AbsRect, Color.WhiteSmoke * .5f);
 
                 _dropZoneManager.Draw(batch);

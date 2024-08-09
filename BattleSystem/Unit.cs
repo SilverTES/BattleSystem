@@ -5,6 +5,7 @@ using Mugen.Animation;
 using Mugen.Core;
 using Mugen.GFX;
 using Mugen.Input;
+using Mugen.Physics;
 
 
 namespace BattleSystem
@@ -87,15 +88,16 @@ namespace BattleSystem
         {
             _state = state;
         }
-        public void MoveTo(int mapGoalX, int mapGoalY, int durationMove = 8)
+        public void MoveTo(int mapGoalX, int mapGoalY, int durationMove = 10)
         {
             _mapGoalX = mapGoalX;
             _mapGoalY = mapGoalY;
 
+            _ticMove = 0;
             _tempoMove = durationMove;
         }
 
-        public void MoveTo(Vector2 goal, int durationMove = 8)
+        public void MoveTo(Vector2 goal, int durationMove = 10)
         {
             _from = XY;
             _to = goal;
@@ -173,7 +175,7 @@ namespace BattleSystem
                             if (cellOver != null)
                                 if (_isDroppable && cellOver._unit == null )
                                 {
-                                    MoveTo(_dropZone._rect.TopLeft - _parent.XY, 8);
+                                    MoveTo(_dropZone._rect.TopLeft - _parent.XY);
                                     SetState(State.MOVE);
                                     isPossibleToDrop = true;
                                 }
@@ -185,12 +187,12 @@ namespace BattleSystem
                                 {
                                     Vector2 prevPosition = new Vector2(_prevMapX * _cellW, _prevMapY * _cellH);
 
-                                    MoveTo( prevPosition, 8);
+                                    MoveTo( prevPosition);
                                     SetState(State.MOVE);
                                 }
                                 else
                                 {
-                                    MoveTo(_prevPosition, 8);
+                                    MoveTo(_prevPosition);
                                     SetState(State.MOVE);
                                 }
                             }
@@ -199,13 +201,13 @@ namespace BattleSystem
                         {
                             if (_isDroppable)
                             {
-                                MoveTo(_dropZone._rect.TopLeft - _parent.XY, 8);
+                                MoveTo(_dropZone._rect.TopLeft - _parent.XY);
                                 SetState(State.MOVE);
                                 //isPossibleToDrop = true;
                             }
                             else
                             {
-                                MoveTo(_prevPosition, 8);
+                                MoveTo(_prevPosition);
                                 SetState(State.MOVE);
                             }
                         }
@@ -276,6 +278,16 @@ namespace BattleSystem
             if (indexLayer == (int)Layers.Debug)
             {
                 //GFX.CenterStringXY(batch, Game1._fontMain, $"{_mapX}:{_mapY}", AbsRectF.TopCenter, Color.Yellow);
+            }
+
+            if(indexLayer == (int)Layers.FX)
+            {
+                if (_state == State.MOVE) 
+                {
+                    GFX.Line(batch, _from + _parent.XY + new Vector2(_cellW/2, _cellH/2), AbsXY + new Vector2(_cellW / 2, _cellH / 2), Color.White * .8f, _cellW/4);
+                    GFX.Line(batch, _from + _parent.XY + new Vector2(_cellW/2, _cellH/2), AbsXY + new Vector2(_cellW / 2, _cellH / 2), Color.White * .8f, _cellW/8);
+                    GFX.Line(batch, _from + _parent.XY + new Vector2(_cellW/2, _cellH/2), AbsXY + new Vector2(_cellW / 2, _cellH / 2), Color.White * .8f, _cellW/16);
+                }
             }
 
             return base.Draw(batch, gameTime, indexLayer);

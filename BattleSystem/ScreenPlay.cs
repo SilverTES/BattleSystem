@@ -36,7 +36,7 @@ namespace BattleSystem
             AddAddon(_loop);
 
             _arena = new Arena(_game, _mouseControl, 12, 8, CellW, CellH);
-            _arena.SetPosition(240, 20);
+            _arena.SetPosition(320, 20);
             _arena.AppendTo(this);
 
         }
@@ -46,8 +46,8 @@ namespace BattleSystem
 
             _arena.AddUnit(2, 1, 1, 1);
             _arena.AddUnit(6, 5, 1, 1);
-            _arena.AddUnit(8, 6, 1, 1);
-            _arena.AddUnit(10, 2, 1, 1);
+            _arena.AddUnit(8, 4, 1, 1);
+            _arena.AddUnit(9, 2, 1, 1);
 
             return base.Init();
         }
@@ -58,7 +58,7 @@ namespace BattleSystem
             _mouse.X = _game._mouse.X;
             _mouse.Y = _game._mouse.Y;
 
-            //_game.IsMouseVisible = !_mouseControl._isActiveDrag; // hide mouse when drag !
+            _game.IsMouseVisible = !_mouseControl._isActiveDrag; // hide mouse when drag !
 
             UpdateChilds(gameTime);
 
