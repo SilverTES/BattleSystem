@@ -46,6 +46,7 @@ namespace BattleSystem
         // Come back to prev map position when drop in case is not possible
         int _prevMapX;
         int _prevMapY;
+        Vector2 _prevPosition = new();
 
         int _cellW;
         int _cellH;
@@ -154,62 +155,94 @@ namespace BattleSystem
                     
                     if (_draggable._onDrag)
                     {
+                        _prevPosition = XY;
+
                         _prevMapX = _mapX;
                         _prevMapY = _mapY;
                     }
                     
                     if (_draggable._offDrag)
                     {
-                        Console.Write("< offDrag >");
+                        //Console.Write("< offDrag >");
 
-                        bool isPossibleToDrop = false;
 
-                        var cellOver = _arena.GetCell(_mapX, _mapY);
-                        if (cellOver != null)
-                            if (_isDroppable && cellOver._unit == null )
+                        if (_arena._isMouseOver)
+                        {
+                            bool isPossibleToDrop = false;
+                            var cellOver = _arena.GetCell(_mapX, _mapY);
+                            if (cellOver != null)
+                                if (_isDroppable && cellOver._unit == null )
+                                {
+                                    MoveTo(_dropZone._rect.TopLeft - _parent.XY, 8);
+                                    SetState(State.MOVE);
+                                    isPossibleToDrop = true;
+                                }
+
+                            // Come back to previous position if not possible to drop
+                            if (!isPossibleToDrop)
+                            {
+                                if (Misc.PointInRect(_prevPosition, _arena.AbsRectF))
+                                {
+                                    Vector2 prevPosition = new Vector2(_prevMapX * _cellW, _prevMapY * _cellH);
+
+                                    MoveTo( prevPosition, 8);
+                                    SetState(State.MOVE);
+                                }
+                                else
+                                {
+                                    MoveTo(_prevPosition, 8);
+                                    SetState(State.MOVE);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (_isDroppable)
                             {
                                 MoveTo(_dropZone._rect.TopLeft - _parent.XY, 8);
                                 SetState(State.MOVE);
-                                isPossibleToDrop = true;
+                                //isPossibleToDrop = true;
                             }
-
-                        if (!isPossibleToDrop)
-                        {
-                            Vector2 prevPosition = new Vector2(_prevMapX * _cellW, _prevMapY * _cellH);
-
-                            MoveTo( prevPosition, 8);
-                            SetState(State.MOVE);
+                            else
+                            {
+                                MoveTo(_prevPosition, 8);
+                                SetState(State.MOVE);
+                            }
                         }
+
+
+
 
                     }
 
                     break;
                 case State.MOVE:
 
-                    _x = Easing.GetValue(Easing.QuadraticEaseInOut, _ticMove, _from.X, _to.X, _tempoMove);
-                    _y = Easing.GetValue(Easing.QuadraticEaseInOut, _ticMove, _from.Y, _to.Y, _tempoMove);
+                    _x = Easing.GetValue(Easing.QuarticEaseOut, _ticMove, _from.X, _to.X, _tempoMove); // QuadraticEaseOut au lieu de Q***InOut pour eviter bug de détection de la dropZone _isNear car le mouvement est trop rapide a la fin
+                    _y = Easing.GetValue(Easing.QuarticEaseOut, _ticMove, _from.Y, _to.Y, _tempoMove);
 
                     _ticMove++;
                     if (_ticMove >= _tempoMove)
                     {
-                        _arena.SetCellUnit(_mapX, _mapY, this);
-
-                        SetState(State.WAIT);
-
                         _x = _to.X;
                         _y = _to.Y;
 
-                        _mapX = _toMap.X;
-                        _mapY = _toMap.Y;
+                        _mapX = (int)((_x + _cellW / 2) / _cellW);
+                        _mapY = (int)((_y + _cellH / 2) / _cellH);
 
-                        if (_isDroppable)
+                        _arena.SetCellUnit(_mapX, _mapY, this);
+
+                        //if (_isDroppable)
                         {
                             _isDroppable = false;
                             _isDropped = true;
 
                             _dropZone._nearNode = this;
                             _dropZone._containedNode = this;
+                            //Console.WriteLine("DropZone ContainedNode Affected !");
                         }
+
+                        SetState(State.WAIT);
                     }
                     break;
                 case State.ATTACK:
@@ -229,7 +262,7 @@ namespace BattleSystem
             if (indexLayer == (int)Layers.Main)
             {
                 GFX.FillRectangle(batch, AbsRect, Color.Black * .5f);
-                
+
                 if (_draggable._isDragged)
                     GFX.Rectangle(batch, AbsRect, Color.Orange * .5f, 2f);
 

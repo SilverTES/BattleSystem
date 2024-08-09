@@ -80,7 +80,7 @@ namespace BattleSystem
                 if ((_containedNode._rect + _containedNode._parent.XY != _rect)) // Test if item is left the zone and dropZone contain a Node !
                 {
                     _containedNode = null;
-                    Console.Write("<Retired contained Node>");
+                    //Console.Write("<Retired contained Node>");
                 }
             }
 

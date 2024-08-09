@@ -10,8 +10,8 @@ namespace BattleSystem
 {
     internal class ScreenPlay : Node
     {
-        public const int CellW = 64;
-        public const int CellH = 64;
+        public const int CellW = 128;
+        public const int CellH = 128;
 
         Vector2 _mouse;
         Game1 _game;
@@ -36,7 +36,7 @@ namespace BattleSystem
             AddAddon(_loop);
 
             _arena = new Arena(_game, _mouseControl, 12, 8, CellW, CellH);
-            _arena.SetPosition(120, 20);
+            _arena.SetPosition(240, 20);
             _arena.AppendTo(this);
 
         }
@@ -58,7 +58,7 @@ namespace BattleSystem
             _mouse.X = _game._mouse.X;
             _mouse.Y = _game._mouse.Y;
 
-            _game.IsMouseVisible = !_mouseControl._isActiveDrag;
+            //_game.IsMouseVisible = !_mouseControl._isActiveDrag; // hide mouse when drag !
 
             UpdateChilds(gameTime);
 

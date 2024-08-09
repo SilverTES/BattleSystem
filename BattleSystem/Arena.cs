@@ -91,7 +91,7 @@ namespace BattleSystem
         MouseControl _mouseControl;
 
         Vector2 _mouse;
-        bool _isMouseOver = false;
+        public bool _isMouseOver = false;
 
         Addon.Loop _loop;
 
@@ -138,12 +138,12 @@ namespace BattleSystem
 
 
             _dropZoneManager = new DropZoneManager();
-            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120, 64, 64), -10, _droppables));
-            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 200, 64, 64), -10, _droppables));
-            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 280, 64, 64), -10, _droppables));
-            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 360, 64, 64), -10, _droppables));
+            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120, _cellW, _cellH), -10, _droppables));
+            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 280, _cellW, _cellH), -10, _droppables));
+            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 440, _cellW, _cellH), -10, _droppables));
+            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 620, _cellW, _cellH), -10, _droppables));
 
-            _dropZoneInGrid = new DropZone(new Rectangle(0, 0, 64, 64), -10, _droppables);
+            _dropZoneInGrid = new DropZone(new Rectangle(0, 0, _cellW, _cellH), -10, _droppables);
             _dropZoneInGrid.Show(false);
             _dropZoneManager.AddZone(_dropZoneInGrid);
         }
@@ -319,8 +319,8 @@ namespace BattleSystem
                 //GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .1f);
 
                 GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .05f);
-                GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Gray * .25f, 3);
-                GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Black * .5f, 1);
+                GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Gray * .25f, 6);
+                GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Black * .5f, 3);
                 GFX.Rectangle(batch, AbsRect, Color.WhiteSmoke * .5f);
 
                 _dropZoneManager.Draw(batch);
@@ -372,8 +372,8 @@ namespace BattleSystem
 
                     if (_cells[i, j]._unit != null)
                         GFX.LeftTopBorderedString(batch, Game1._fontMain, $"{_cells[i, j]._unit._index}", pos, Color.Yellow, Color.Red);
-                    else
-                        GFX.LeftTopBorderedString(batch, Game1._fontMain, ".", pos, Color.Yellow, Color.Red);
+                    //else
+                    //    GFX.LeftTopBorderedString(batch, Game1._fontMain, ".", pos, Color.Yellow, Color.Red);
                 }
             }
 
@@ -382,7 +382,12 @@ namespace BattleSystem
                 Rectangle rectOriginal = new Rectangle(_cursor.ToPoint() + new Point(AbsX, AbsY), new Point(_cellW, _cellH));
                 //RectangleF rectCursor = ((RectangleF)rectOriginal).Extend(_loop._current);
                 var unit = _cells[_mapCursor.X, _mapCursor.Y]._unit;
-                GFX.TopCenterString(batch, Game1._fontMain, $"{unit} {unit?._index}", ((RectangleF)rectOriginal).BottomCenter, Color.Red * .75f);
+                
+                if (unit != null)
+                    GFX.TopCenterString(batch, Game1._fontMain, $"{unit} {unit._index}", ((RectangleF)rectOriginal).BottomCenter, Color.Red * .75f);
+                else
+                    GFX.TopCenterString(batch, Game1._fontMain, "No Unit Here", ((RectangleF)rectOriginal).BottomCenter, Color.Red * .25f);
+
             }
         }
 

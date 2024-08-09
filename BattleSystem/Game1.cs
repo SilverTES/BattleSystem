@@ -34,8 +34,8 @@ namespace BattleSystem
     public class Game1 : Game
     {
         #region Attributes
-        public const int ScreenW = 960;
-        public const int ScreenH = 540;
+        public const int ScreenW = 1920;
+        public const int ScreenH = 1080;
 
         public static SpriteFont _fontMain;
         
@@ -44,6 +44,7 @@ namespace BattleSystem
         public static Texture2D _texAvatar1x1;
         public static Texture2D _texBackground;
         public static Texture2D _texGlow0;
+        public static Texture2D _texCursor;
 
         public static Effect _effectBasic;
         public static Effect _effectColor;
@@ -95,6 +96,9 @@ namespace BattleSystem
             _button = new StateEvent((int)ButtonDown.Count);
 
             base.Initialize();
+
+            //Mouse.SetCursor(MouseCursor.FromTexture2D(_texCursor, 10, 2));
+            
         }
         protected override void LoadContent()
         {
@@ -108,6 +112,8 @@ namespace BattleSystem
             _texBackground = Content.Load<Texture2D>("Images/background00");
             _texGlow0 = Content.Load<Texture2D>("Images/circleGlow0");
             _texAvatar1x1 = Content.Load<Texture2D>("Images/avatar1x1");
+            _texCursor = Content.Load<Texture2D>("Images/mouseCursor");
+
 
             _effectBasic = Content.Load<Effect>("Effects/effectBasic");
             _effectColor = Content.Load<Effect>("Effects/effectColor");
