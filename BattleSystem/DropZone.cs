@@ -33,7 +33,7 @@ namespace BattleSystem
         { 
             _isShow = isShow;
         }
-        public void UpdateZone(Rectangle rect, float nearZoneSize) 
+        public void UpdateZone(RectangleF rect, float nearZoneSize) 
         {
             _rect = rect;
             _rectNear = _rect.Extend(nearZoneSize);

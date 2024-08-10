@@ -35,7 +35,7 @@ namespace BattleSystem
         {
             if (indexLayer == (int)Layers.FX)
             {
-                GFX.Line(batch, _start, _goal, Color.White * .5f, 40f);
+                GFX.Line(batch, _start, _goal, Color.Red * .5f, 40f);
             }
 
             return base.Draw(batch, gameTime, indexLayer);

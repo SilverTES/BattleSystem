@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Mugen.Animation;
 using Mugen.Core;
+using Mugen.Event;
 using Mugen.GFX;
 using Mugen.Input;
 using Mugen.Physics;
@@ -12,6 +13,12 @@ namespace BattleSystem
 {
     public class Unit : Node
     {
+        enum Timer
+        {
+            Trail,
+            Count
+        }
+        TimerEvent _timer;
         public enum State
         {
             NONE = -1,
@@ -38,8 +45,14 @@ namespace BattleSystem
         int _mapGoalX;
         int _mapGoalY;
 
-        int _sizeW;
-        int _sizeH;
+        //int _sizeW;
+        //int _sizeH;
+
+        Point _size = new Point();
+
+        public Point Size { get { return _size; } }
+        //public int SizeW => _sizeW;
+        //public int SizeH => _sizeH;
 
         public int _mapX;
         public int _mapY;
@@ -66,18 +79,22 @@ namespace BattleSystem
             _type = UID.Get<Unit>();
             _mouse = mouse;
             _arena = arena;
-            _sizeW = sizeW;
-            _sizeH = sizeH;
+            _size.X = sizeW;
+            _size.Y = sizeH;
             _cellW = cellW;
             _cellH = cellH;
 
-            SetSize(_sizeW * _cellW, _sizeH * _cellH);
+            SetSize(_size.X * _cellW, _size.Y * _cellH);
 
             _draggable = new Addon.Draggable(this, _mouse);
             _draggable.SetDragRectNode(true);
             _draggable.SetDraggable(true);
 
             AddAddon(_draggable);
+
+            _timer = new TimerEvent((int)Timer.Count);
+            _timer.SetTimer((int)Timer.Trail, TimerEvent.Time(0, 0, .001f));
+            _timer.StartTimer((int)Timer.Trail);
         }
 
         public override Node Init()
@@ -97,7 +114,7 @@ namespace BattleSystem
         //    _tempoMove = durationMove;
         //}
 
-        public void MoveTo(Vector2 goal, int durationMove = 10)
+        public void MoveTo(Vector2 goal, int durationMove = 6)
         {
             _from = XY;
             _to = goal;
@@ -125,6 +142,7 @@ namespace BattleSystem
         public override Node Update(GameTime gameTime)
         {
             UpdateRect();
+            _timer.Update();
 
             _mapX = (int)((_x+_cellW/2)/_cellW);
             _mapY = (int)((_y+_cellH/2)/_cellH);
@@ -149,12 +167,21 @@ namespace BattleSystem
 
                         // test si l'unit dragué est le même unit dans la case , si oui on enlève l'unit de la case
                         var cellOver = _arena.GetCell(_mapX, _mapY);
+
                         if (cellOver != null)
                             if (cellOver._unit != null)
                             {
                                 if (Arena.CurrentDragged._index == cellOver._unit._index)
-                                    _arena.SetCellUnit(_mapX, _mapY, null);
+                                {
+
+                                    //_arena.SetCellUnit(_mapX, _mapY, null);
+                                    _arena.EraseCellUnit(_mapX, _mapY, cellOver._unit);
+                                }
                             }
+
+
+                        if (_timer.OnTimer((int)Timer.Trail))
+                            new Trail(AbsRectF.Center, _size.ToVector2(), .025f, Color.WhiteSmoke).AppendTo(_parent);
 
                     }
                     
@@ -222,6 +249,9 @@ namespace BattleSystem
 
                     break;
                 case State.MOVE:
+
+                    if (_timer.OnTimer((int)Timer.Trail))
+                        new Trail(AbsRectF.Center, _size.ToVector2(), .025f, Color.WhiteSmoke).AppendTo(_parent);
 
                     _draggable.SetDraggable(false);
 

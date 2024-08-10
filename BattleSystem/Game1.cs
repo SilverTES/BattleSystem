@@ -45,6 +45,7 @@ namespace BattleSystem
         public static Texture2D _texBackground;
         public static Texture2D _texGlow0;
         public static Texture2D _texCursor;
+        public static Texture2D _texTrail;
 
         public static Effect _effectBasic;
         public static Effect _effectColor;
@@ -83,7 +84,10 @@ namespace BattleSystem
             _imGuiRenderer = new ImGuiRenderer(this);
             _imGuiRenderer.RebuildFontAtlas();
         }
-
+        public static bool IsLayer(int indexLayer)
+        {
+            return indexLayer == (int)Layers.Count;
+        }
         protected override void Initialize()
         {
             _screenPlay = new ScreenPlay(this);
@@ -113,6 +117,7 @@ namespace BattleSystem
             _texGlow0 = Content.Load<Texture2D>("Images/circleGlow0");
             _texAvatar1x1 = Content.Load<Texture2D>("Images/avatar1x1");
             _texCursor = Content.Load<Texture2D>("Images/mouseCursor");
+            _texTrail = Content.Load<Texture2D>("Images/trail");
 
 
             _effectBasic = Content.Load<Effect>("Effects/effectBasic");
