@@ -35,7 +35,7 @@ namespace BattleSystem
 
             AddAddon(_loop);
 
-            _arena = new Arena(_game, _mouseControl, 12, 8, CellW, CellH);
+            _arena = new Arena(_game, _mouseControl, 10, 8, CellW, CellH);
             _arena.SetPosition(320, 20);
             _arena.AppendTo(this);
 
@@ -45,9 +45,10 @@ namespace BattleSystem
             InitChilds();
 
             _arena.AddUnit(2, 1, 2, 2);
+            _arena.AddUnit(2, 6, 2, 1);
             _arena.AddUnit(6, 5, 1, 1);
             _arena.AddUnit(8, 4, 1, 1);
-            _arena.AddUnit(9, 2, 1, 1);
+            _arena.AddUnit(9, 2, 1, 2);
 
             return base.Init();
         }

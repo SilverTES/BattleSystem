@@ -1,16 +1,20 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
+using Mugen.AI;
 using Mugen.Core;
 using Mugen.GFX;
 using Mugen.Input;
 using Mugen.Physics;
 using System.Collections.Generic;
+
+
 namespace BattleSystem
 {
-
-    public class Cell
+    public class Cell : BaseTile
     {
+
+        Arena _arena;
+
         public Unit _unit;
         public bool _isFree = true;
         public int _id = 0;
@@ -18,22 +22,42 @@ namespace BattleSystem
         float _acc = .025f;
 
         Vector2 _position = new();
-        Point _mapPosition;
-        Point _size;
+        Point _mapPosition = new();
+        Point _size = new();
 
         public bool _isMouseOver = false;
         public bool _isSelected = false;
-        public Cell(Point mapPosition, Point size) 
-        { 
+
+        Rectangle _rect;
+
+        public Cell()
+        {
+            _passLevel = 0;
+        }
+        public Cell(Arena arena, Point mapPosition, Point size) 
+        {
+            _arena = arena;
             _mapPosition = mapPosition;
             _size = size;
 
             _position.X = _mapPosition.X * _size.X;
             _position.Y = _mapPosition.Y * _size.Y;
+            _rect = new Rectangle((int)_position.X, (int)_position.Y,size.X,size.Y);
+
+            _passLevel = 0;
+
         }
 
         public void Update()
         {
+            _isMouseOver = false;
+            _isSelected = false;
+
+            if (Misc.PointInRect(_arena._mouseControl.GetPosition() - _arena.XY.ToPoint(), _rect))
+            {
+                _isMouseOver = true;
+            }
+
             if (_isMouseOver)
             {
                 _alpha = 1f;
@@ -83,24 +107,28 @@ namespace BattleSystem
             LAST
         }
 
-        public static Node CurrentDragged;
+        public static Unit CurrentDragged;
 
         int _mapW;
         int _mapH;
 
+        RectangleF _rectZone;
+
+        public Point MapSize { get; private set; }
+
+
         Point _mapCursor = new();
         Vector2 _cursor = new();
         RectangleF _rectCursor;
-
 
         int _cellW;
         int _cellH;
 
         public Point CellSize { get; private set; }
 
-        Cell[,] _cells;
+        Map2D<Cell> _cells;
 
-        MouseControl _mouseControl;
+        public MouseControl _mouseControl;
 
         Vector2 _mouse;
         public bool _isMouseOver = false;
@@ -113,7 +141,7 @@ namespace BattleSystem
         DropZone _dropZoneInGrid;
         
         List<Node> _listItems;
-
+        
         public Arena(Game1 game, MouseControl mouseEvent, int mapW, int mapH, int cellW = 32, int cellH = 32) 
         { 
             _game = game;
@@ -121,31 +149,34 @@ namespace BattleSystem
 
             _mapW = mapW;
             _mapH = mapH;
+            MapSize = new Point(mapW, mapH);
+
+            _cells = new Map2D<Cell>(mapW, mapH);
+
+            _rectZone = new RectangleF(_rect.X, _rect.Y, _rect.Width, _rect.Height);
 
             _cellW = cellW;
             _cellH = cellH;
             CellSize = new Point(cellW, cellH);
-
-            _cells = new Cell[_cellW, _cellH];
 
             InitAllCells();
 
             SetSize(_mapW * _cellW, _mapH * _cellH);
 
             _loop = new Addon.Loop(this);
-            _loop.SetLoop(0, -1.5f, 1.5f, .25f, Mugen.Animation.Loops.PINGPONG);
+            _loop.SetLoop(0, 5f, 15f, .5f, Mugen.Animation.Loops.PINGPONG);
             _loop.Start();
             AddAddon(_loop);
 
-            int[] _droppables = new int[] { UID.Get<Unit>(), UID.Get<Card>() };
+            int[] _droppables = new int[] { UID.Get<Unit>() };
 
 
             _dropZoneManager = new DropZoneManager();
-            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 0, _cellW, _cellH), -10, _droppables));
-            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 1, _cellW, _cellH), -10, _droppables));
-            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 2, _cellW, _cellH), -10, _droppables));
-            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 3, _cellW, _cellH), -10, _droppables));
-            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 4, _cellW, _cellH), -10, _droppables));
+            //_dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 0, _cellW, _cellH), -10, _droppables));
+            //_dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 1, _cellW, _cellH), -10, _droppables));
+            //_dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 2, _cellW, _cellH), -10, _droppables));
+            //_dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 3, _cellW, _cellH), -10, _droppables));
+            //_dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 4, _cellW, _cellH), -10, _droppables));
 
             _dropZoneInGrid = new DropZone(new Rectangle(0, 0, _cellW, _cellH), -10, _droppables);
             _dropZoneInGrid.Show(false);
@@ -157,8 +188,9 @@ namespace BattleSystem
             {
                 for (int j = 0; j < _cellH; j++)
                 {
-                    var cell = new Cell(new Point(i, j), new Point(_cellW, _cellH));
-                    _cells[i, j] = cell;
+                    var cell = new Cell(this, new Point(i, j), new Point(_cellW, _cellH));
+                    _cells.Put(i, j, cell);
+                    //_cells[i][j] = cell;
                 }
             }
         }
@@ -169,28 +201,44 @@ namespace BattleSystem
 
             SetCellUnit(mapX, mapY, unit);
         }
+        public List<List<Cell>> GetMap()
+        {
+            return _cells.GetMap();
+        }
+        public bool IsInMap(int mapX, int mapY)
+        {
+            return !(mapX < 0 || mapX > _mapW || mapY < 0 || mapY > _mapH);
+        }
+        public bool IsInMap(Point mapPoint)
+        {
+            return IsInMap(mapPoint.X, mapPoint.Y);
+        }
         public void SetCell(int mapX, int mapY, Cell cell)
         {
             if (mapX < 0 || mapX > _mapW || mapY < 0 || mapY > _mapH)
                 return;
 
-            _cells[mapX, mapY] = cell;
+            //_cells[mapX, mapY] = cell;
+            _cells.Put(mapX, mapY, cell);
         }
         public void SetCellUnit(int mapX, int mapY, Unit unit)
         {
-            if (mapX < 0 || mapX > _mapW || mapY < 0 || mapY > _mapH)
-                return;
-
-            //_cells[mapX, mapY]._unit = unit;
-
             if (unit != null)
             {
+                if (mapX < 0 || mapX + unit.Size.X > _mapW || mapY < 0 || mapY + unit.Size.Y > _mapH)
+                    return;
+
                 for (int i = 0; i < unit.Size.X; i++)
                 {
                     for (int j = 0; j < unit.Size.Y; j++)
                     {
-                        if (_cells[mapX + i, mapY + j] != null)
-                            _cells[mapX + i, mapY + j]._unit = unit;
+                        var cell = _cells.Get(mapX + i, mapY + j); 
+
+                        if (cell != null)
+                        {
+                            cell._unit = unit;
+                            cell._passLevel = 1;
+                        }
                     }
                 }
             }
@@ -198,19 +246,22 @@ namespace BattleSystem
         }
         public void EraseCellUnit(int mapX, int mapY, Unit unit)
         {
-            if (mapX < 0 || mapX > _mapW || mapY < 0 || mapY > _mapH)
-                return;
-
-            //_cells[mapX, mapY]._unit = unit;
-
             if (unit != null)
             {
+                if (mapX < 0 || mapX + unit.Size.X > _mapW || mapY < 0 || mapY + unit.Size.Y > _mapH)
+                    return;
+
                 for (int i = 0; i < unit.Size.X; i++)
                 {
                     for (int j = 0; j < unit.Size.Y; j++)
                     {
-                        if (_cells[mapX + i, mapY + j] != null)
-                            _cells[mapX + i, mapY + j]._unit = null;
+                        var cell = _cells.Get(mapX + i, mapY + j);
+
+                        if (cell != null)
+                        {
+                            cell._unit = null;
+                            cell._passLevel = 0;
+                        }
                     }
                 }
             }
@@ -222,28 +273,19 @@ namespace BattleSystem
             if (mapX < 0 || mapX > _mapW || mapY < 0 || mapY > _mapH)
                 return null;
             
-            return _cells[mapX, mapY];
+            return _cells.Get(mapX, mapY);
         }
         public Unit GetCellUnit(int mapX, int mapY)
         {
             if (mapX < 0 || mapX > _mapW || mapY < 0 || mapY > _mapH)
                 return null;
 
-            return _cells[mapX, mapY]._unit;
-        }
-        private void ResetCells()
-        {
-            for (int i = 0; i < _cellW; i++)
-            {
-                for (int j = 0; j < _cellH; j++)
-                {
-                    var cell = _cells[i, j];
+            var cell = _cells.Get(mapX, mapY);
+            
+            if (cell != null)
+                return cell._unit;
 
-                    cell._isMouseOver = false;
-                    cell._isSelected = false;
-
-                }
-            }
+            return null;
         }
         private void UpdateCells()
         {
@@ -251,9 +293,10 @@ namespace BattleSystem
             {
                 for (int j = 0; j < _cellH; j++)
                 {
-                    var cell = _cells[i, j];
-
-                    cell.Update();
+                    var cell = _cells.Get(i, j);
+                    
+                    if (cell != null )
+                        cell.Update();
                 }
             }
         }
@@ -263,9 +306,9 @@ namespace BattleSystem
             {
                 for (int j = 0; j < _cellH; j++)
                 {
-                    var cell = _cells[i, j];
-
-                    cell.Draw(batch, AbsXY.ToPoint(), indexLayer);
+                    var cell = _cells.Get(i, j);
+                    if (cell != null)
+                        cell.Draw(batch, AbsXY.ToPoint(), indexLayer);
                 }
             }
         }
@@ -276,25 +319,28 @@ namespace BattleSystem
         }
         public override Node Update(GameTime gameTime)
         {
+            UpdateRect();
 
-            _isMouseOver = Misc.PointInRect(_mouse.X + _x, _mouse.Y + _y, _rect);
 
-            if (Button.OnePress("RightButton", Mouse.GetState().RightButton == ButtonState.Pressed))
-            {
-                new Card(_game, _mouseControl).SetPosition(_mouse).AppendTo(this);
-            }
+            _rectZone.X = _rect.X;
+            _rectZone.Y = _rect.Y;
 
-            // Quand drag un Unit , on change la position du pointeur (souris) par le milieu de l'Unit qui est en train d'être dragué
             if (CurrentDragged != null)
             {
+                // Quand drag un Unit , on change la position du pointeur (souris) par le milieu de l'Unit qui est en train d'être dragué
                 _mouse.X = CurrentDragged._rect.TopLeft.X + _cellW/2;
                 _mouse.Y = CurrentDragged._rect.TopLeft.Y + _cellH/2;
+
+                _rectZone.Width =  _rect.Width - ((CurrentDragged.Size.X-1)*_cellW) + _cellW/2;
+                _rectZone.Height = _rect.Height - ((CurrentDragged.Size.Y-1)*_cellH) + _cellH/2;
             }
             else
             {
                 _mouse.X = _mouseControl.GetPosition().X - _x;
                 _mouse.Y = _mouseControl.GetPosition().Y - _y;
             }
+
+            _isMouseOver = Misc.PointInRect(_mouse.X + _x + _cellW/2, _mouse.Y + _y + _cellH/2, _rectZone);
 
             _mapCursor.X = (int)(_mouse.X / _cellW);
             _mapCursor.Y = (int)(_mouse.Y / _cellH);
@@ -312,11 +358,12 @@ namespace BattleSystem
             SortZAscending();
             UpdateChildsSort(gameTime);
             
-            ResetCells();
-            _cells[_mapCursor.X, _mapCursor.Y]._isMouseOver = true;
+            //ResetCells();
+            //_cells[_mapCursor.X, _mapCursor.Y]._isMouseOver = true;
+
             UpdateCells();
 
-            _listItems = GroupOf(new int[] { UID.Get<Card>(), UID.Get<Unit>() });
+            _listItems = GroupOf(new int[] { UID.Get<Unit>() });
             // reset focus
             if (_mouseControl._onClick)
             {
@@ -353,6 +400,7 @@ namespace BattleSystem
             {
                 //GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .1f);
 
+
                 GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .2f);
                 GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Gray * .25f, 3);
                 GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Black * .5f, 1);
@@ -363,21 +411,43 @@ namespace BattleSystem
                 DrawChilds(batch, gameTime, indexLayer);
                 DrawCells(batch, indexLayer);
 
-                GFX.LeftTopString(batch, Game1._fontMain, $"{_mouse} -- {_mapCursor} -- {CurrentDragged} {CurrentDragged?._index}", AbsXY + new Vector2(10, -20), Color.AntiqueWhite);
+                GFX.LeftTopString(batch, Game1._fontMain, $"{_mouse} -- {_mapCursor} -- {CurrentDragged} {CurrentDragged?._index} {_isMouseOver}", AbsXY + new Vector2(10, -20), Color.AntiqueWhite);
+
+                // Debug Zone when is Drag Unit is possible to drop !!
+                //if (!_isMouseOver) 
+                //    GFX.Rectangle(batch, _rectZone, Color.Red, 4f);
+
             }
 
             if (indexLayer == (int)Layers.FX)
             {
+
                 DrawChilds(batch, gameTime, indexLayer);
                 DrawCells(batch, indexLayer);
 
-                if (_isMouseOver && _mouseControl._isActiveDrag)
+                if (_mouseControl._isActiveDrag)
                 {
                     RectangleF rectCursorExtend = ((RectangleF)_rectCursor).Extend(_loop._current);
 
-                    GFX.FillRectangle(batch, rectCursorExtend, Color.LightSeaGreen * .5f);
-                    GFX.Rectangle(batch, rectCursorExtend, Color.LightSeaGreen * 1f, 4f);
+                    Color color = Color.ForestGreen;
+
+                    if (CurrentDragged != null)
+                    {
+                        if (!CurrentDragged.IsPossibleToDrop)
+                        {
+                            color = Color.Red;
+                        }
+                        
+                        GFX.FillRectangle(batch, CurrentDragged.PrevPosition + AbsXY - (Vector2.One*(_loop._current - 20)), CurrentDragged.AbsRectF.GetSize() + (Vector2.One*2*(_loop._current - 20)), Color.Yellow * .75f);
+                    }
+
+                    if (_isMouseOver)
+                    {
+                        GFX.FillRectangle(batch, rectCursorExtend, color * .75f);
+                        GFX.Rectangle(batch, rectCursorExtend, color * .5f, 4f);
+                    }
                 }
+
             }
 
             if (indexLayer == (int)Layers.Debug)
@@ -398,16 +468,19 @@ namespace BattleSystem
                 {
                     Vector2 pos = new Vector2(i * _cellW, j * _cellH) + AbsXY + new Vector2(_cellW/2, 20);
 
-                    if (_cells[i, j]._unit != null)
-                        GFX.CenterBorderedStringXY(batch, Game1._fontMain, $"{_cells[i, j]._unit._index}", pos, Color.Yellow, Color.Red);
+                    if (_cells.Get(i, j)._unit != null)
+                        GFX.CenterBorderedStringXY(batch, Game1._fontMain, $"{_cells.Get(i, j)._unit._index}", pos + new Vector2(0, 40), Color.Yellow, Color.Red);
                     //else
                     //    GFX.LeftTopBorderedString(batch, Game1._fontMain, ".", pos, Color.Yellow, Color.Red);
+
+                    // Show passLevel in cell
+                    //GFX.CenterBorderedStringXY(batch, Game1._fontMain, $"{_cells.Get(i,j)._passLevel}", pos + new Vector2(0, 80), Color.Yellow, Color.Green);
                 }
             }
 
             if (_isMouseOver)
             {
-                var unit = _cells[_mapCursor.X, _mapCursor.Y]._unit;
+                var unit = _cells.Get(_mapCursor.X, _mapCursor.Y)._unit;
                 
                 if (unit != null)
                     GFX.TopCenterString(batch, Game1._fontMain, $"{unit} {unit._index}", unit._rect.BottomCenter + AbsXY, Color.Red * .75f);

@@ -1,12 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Mugen.AI;
 using Mugen.Animation;
 using Mugen.Core;
 using Mugen.Event;
 using Mugen.GFX;
 using Mugen.Input;
-using Mugen.Physics;
+using Mugen.Map2D;
 
 
 namespace BattleSystem
@@ -16,6 +18,7 @@ namespace BattleSystem
         enum Timer
         {
             Trail,
+            CheckPath,
             Count
         }
         TimerEvent _timer;
@@ -29,50 +32,50 @@ namespace BattleSystem
             LAST
         }
 
-        State _state = State.WAIT;
+        protected State _state = State.WAIT;
 
         // Move position
-        public Vector2 _from;
-        public Vector2 _to;
-        public Point _toMap;
+        protected Vector2 _from;
+        protected Vector2 _to;
+        protected Point _toMap;
 
         // Tempo Move
-        public int _ticMove;
-        public int _tempoMove;
+        protected int _ticMove;
+        protected int _tempoMove;
 
-        public Arena _arena;
+        protected Arena _arena;
 
         int _mapGoalX;
         int _mapGoalY;
 
-        //int _sizeW;
-        //int _sizeH;
+        public List<Point> _path = null;
 
-        Point _size = new Point();
+        protected Point _size = new Point();
 
         public Point Size { get { return _size; } }
-        //public int SizeW => _sizeW;
-        //public int SizeH => _sizeH;
 
-        public int _mapX;
-        public int _mapY;
-        
+        protected int _mapX;
+        protected int _mapY;
+
         // Come back to prev map position when drop in case is not possible
-        int _prevMapX;
-        int _prevMapY;
-        Vector2 _prevPosition = new();
+        protected int _prevMapX;
+        protected int _prevMapY;
+        protected Vector2 _prevPosition = new();
+        public Vector2 PrevPosition { get { return _prevPosition; } }
 
-        int _cellW;
-        int _cellH;
 
-        MouseControl _mouse;
-        
-        public Addon.Draggable _draggable;
+        protected int _cellW;
+        protected int _cellH;
+
+        protected MouseControl _mouse;
+
+        protected Addon.Draggable _draggable;
 
         public bool _isDroppable = false;
         public bool _isDropped = false;
-
         public DropZone _dropZone;
+        protected bool _isPossibleToDrop = false;
+        public bool IsPossibleToDrop { get { return _isPossibleToDrop; } }
 
         public Unit(MouseControl mouse, Arena arena, int sizeW, int sizeH, int cellW, int cellH) 
         {
@@ -93,27 +96,34 @@ namespace BattleSystem
             AddAddon(_draggable);
 
             _timer = new TimerEvent((int)Timer.Count);
+            
             _timer.SetTimer((int)Timer.Trail, TimerEvent.Time(0, 0, .001f));
             _timer.StartTimer((int)Timer.Trail);
+
+            _timer.SetTimer((int)Timer.CheckPath, TimerEvent.Time(0, 0, .02f));
+            _timer.StartTimer((int)Timer.CheckPath);
         }
 
         public override Node Init()
         {
             return base.Init();
         }
+        public Vector2 GetCellSize()
+        {
+            return new Vector2(_cellW, _cellH);
+        }
         public void SetState(State state)
         {
             _state = state;
         }
-        //public void MoveTo(int mapGoalX, int mapGoalY, int durationMove = 10)
-        //{
-        //    _mapGoalX = mapGoalX;
-        //    _mapGoalY = mapGoalY;
+        public void MoveTo(int mapGoalX, int mapGoalY, int durationMove = 10)
+        {
+            _mapGoalX = mapGoalX;
+            _mapGoalY = mapGoalY;
 
-        //    _ticMove = 0;
-        //    _tempoMove = durationMove;
-        //}
-
+            _ticMove = 0;
+            _tempoMove = durationMove;
+        }
         public void MoveTo(Vector2 goal, int durationMove = 6)
         {
             _from = XY;
@@ -159,9 +169,18 @@ namespace BattleSystem
                     {
                         _parent.GotoFront(_index);
                     }
-
                     if (_draggable._isDragged)
                     {
+
+                        if (_timer.OnTimer((int)Timer.CheckPath))
+                        {
+                            Point start = new Point(_prevMapX, _prevMapY);
+                            Point end = new Point(_mapX, _mapY);
+
+                            if (_arena.IsInMap(start) && _arena.IsInMap(end))
+                                _path = new Astar2DList<Cell>(_arena.GetMap(), start, end, Find.Diagonal, 1, false)._path;
+                        }
+
                         Arena.CurrentDragged = this;
                         _isDropped = false;
 
@@ -173,15 +192,37 @@ namespace BattleSystem
                             {
                                 if (Arena.CurrentDragged._index == cellOver._unit._index)
                                 {
-
-                                    //_arena.SetCellUnit(_mapX, _mapY, null);
                                     _arena.EraseCellUnit(_mapX, _mapY, cellOver._unit);
                                 }
                             }
 
-
                         if (_timer.OnTimer((int)Timer.Trail))
                             new Trail(AbsRectF.Center, _size.ToVector2(), .025f, Color.WhiteSmoke).AppendTo(_parent);
+
+
+                        //check if Unit can be dropped
+                        _isPossibleToDrop = true;
+
+                        for (int i = 0; i < _size.X; i++)
+                        {
+                            for (int j = 0; j < _size.Y; j++)
+                            {
+                                cellOver = _arena.GetCell(_mapX + i, _mapY + j);
+
+                                if (cellOver == null)
+                                {
+                                    _isPossibleToDrop = false;
+                                }
+
+                                if (cellOver != null)
+                                {
+                                    if (cellOver._unit != null)
+                                    {
+                                        _isPossibleToDrop = false;
+                                    }
+                                }
+                            }
+                        }
 
                     }
                     
@@ -191,43 +232,57 @@ namespace BattleSystem
 
                         _prevMapX = _mapX;
                         _prevMapY = _mapY;
+
+                        Console.WriteLine($"On Drag : {_prevPosition} : {_prevMapX}x{_prevMapY}");
                     }
-                    
+
                     if (_draggable._offDrag)
                     {
-                        if (_arena._isMouseOver)
+                        _path.Clear();
+                        //if (_arena._isMouseOver)
                         {
-                            bool isPossibleToDrop = true;
                             Cell cellOver = null;
 
+                            _isPossibleToDrop = true;
+
+                             // If unit is out of arena isPossibleToDrop is false!
+                            if (!_arena._isMouseOver)
+                                _isPossibleToDrop = false;
+
+                            // check all cells compose the unit size if another unit occuped the cells
                             for (int i = 0; i < _size.X; i++)
                             {
                                 for (int j = 0; j < _size.Y; j++)
                                 {
                                     cellOver = _arena.GetCell(_mapX + i, _mapY + j);
 
+                                    if (cellOver == null)
+                                    {
+                                        Console.Write("<GET CELL NULL>");
+                                        _isPossibleToDrop = false;
+                                    }
+
                                     if (cellOver != null)
                                     {
                                         if (cellOver._unit != null)
                                         {
                                             Console.WriteLine("Trouve un cell occupé déjà");
-                                            isPossibleToDrop = false;
+                                            _isPossibleToDrop = false;
                                         }
-
                                     }
                                 }
                             }
 
-                            if (isPossibleToDrop)
+
+                            if (_isPossibleToDrop) // Unit move to goal when isPossibleToDrop is true
+                            {
                                 if (_isDroppable && cellOver._unit == null )
                                 {
                                     MoveTo(_dropZone._rect.TopLeft - _parent.XY);
                                     SetState(State.MOVE);
-                                    isPossibleToDrop = true;
                                 }
-
-                            // Come back to previous position if not possible to drop
-                            if (!isPossibleToDrop)
+                            }
+                            else // Come back to previous position if not possible to drop
                             {
                                 if (Misc.PointInRect(_prevPosition, _arena.AbsRectF))
                                 {
@@ -242,21 +297,21 @@ namespace BattleSystem
                                     SetState(State.MOVE);
                                 }
                             }
+
                         }
-                        else
-                        {
-                            if (_isDroppable)
-                            {
-                                MoveTo(_dropZone._rect.TopLeft - _parent.XY);
-                                SetState(State.MOVE);
-                                //isPossibleToDrop = true;
-                            }
-                            else
-                            {
-                                MoveTo(_prevPosition);
-                                SetState(State.MOVE);
-                            }
-                        }
+                        //else
+                        //{
+                        //    if (_isDroppable)
+                        //    {
+                        //        MoveTo(_dropZone._rect.TopLeft - _parent.XY);
+                        //        SetState(State.MOVE);
+                        //    }
+                        //    else
+                        //    {
+                        //        MoveTo(_prevPosition);
+                        //        SetState(State.MOVE);
+                        //    }
+                        //}
 
 
 
@@ -317,9 +372,11 @@ namespace BattleSystem
                 GFX.FillRectangle(batch, AbsRectF.Extend(-4), Color.Black * .8f);
 
                 if (_draggable._isDragged)
-                    GFX.Rectangle(batch, AbsRect, Color.Orange * .5f, 2f);
+                {
+                    GFX.Rectangle(batch, AbsRectF.Extend(2), Color.Orange * .5f, 2f);
+                }
 
-                batch.Draw(Game1._texAvatar1x1, AbsXY, Color.White);
+                //batch.Draw(Game1._texAvatar1x1, AbsXY, Color.White);
 
                 //if (_isDroppable)
                 //    GFX.Rectangle(batch, AbsRect, Color.Red * .5f, 2f);
@@ -328,7 +385,23 @@ namespace BattleSystem
 
             if (indexLayer == (int)Layers.Debug)
             {
-                //GFX.CenterStringXY(batch, Game1._fontMain, $"{_mapX}:{_mapY}", AbsRectF.TopCenter, Color.Yellow);
+                //GFX.CenterStringXY(batch, Game1._fontMain, $"{_mapX}:{_mapY}\n{_isPossibleToDrop}", AbsRectF.TopCenter, Color.Yellow);
+                if (_path != null)
+                    if (_path.Count> 0)
+                    {
+                        for (int i = 1; i < _path.Count; i++)
+                        {
+                            Vector2 p1 = _path[i-1].ToVector2() * GetCellSize() + GetCellSize() / 2;
+                            Vector2 p2 = _path[i].ToVector2() * GetCellSize() + GetCellSize() / 2;
+
+                            if (i==1)
+                                GFX.Point(batch, p1 + _arena.AbsXY, 8f, Color.White);
+
+                            GFX.Line(batch, p1 + _arena.AbsXY, p2 + _arena.AbsXY, Color.White, 4f);
+                            GFX.Point(batch, p2 + _arena.AbsXY, 8f, Color.White);
+                        }
+                    }
+
             }
 
             if(indexLayer == (int)Layers.FX)
@@ -343,6 +416,7 @@ namespace BattleSystem
                     GFX.Line(batch, _from + _parent.XY + new Vector2(_cellW/2, _cellH/2), AbsXY + new Vector2(_cellW / 2, _cellH / 2), Color.White * alpha, _cellW/5);
 
                 }
+
             }
 
             return base.Draw(batch, gameTime, indexLayer);
