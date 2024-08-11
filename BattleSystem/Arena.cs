@@ -78,7 +78,6 @@ namespace BattleSystem
     {
         enum State
         {
-
             PLAYER_PHASE,
             ENEMY_PHASE,
             LAST
@@ -401,8 +400,8 @@ namespace BattleSystem
 
                     if (_cells[i, j]._unit != null)
                         GFX.CenterBorderedStringXY(batch, Game1._fontMain, $"{_cells[i, j]._unit._index}", pos, Color.Yellow, Color.Red);
-                    else
-                        GFX.LeftTopBorderedString(batch, Game1._fontMain, ".", pos, Color.Yellow, Color.Red);
+                    //else
+                    //    GFX.LeftTopBorderedString(batch, Game1._fontMain, ".", pos, Color.Yellow, Color.Red);
                 }
             }
 

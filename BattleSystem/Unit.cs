@@ -195,14 +195,30 @@ namespace BattleSystem
                     
                     if (_draggable._offDrag)
                     {
-                        //Console.Write("< offDrag >");
-
-
                         if (_arena._isMouseOver)
                         {
-                            bool isPossibleToDrop = false;
-                            var cellOver = _arena.GetCell(_mapX, _mapY);
-                            if (cellOver != null)
+                            bool isPossibleToDrop = true;
+                            Cell cellOver = null;
+
+                            for (int i = 0; i < _size.X; i++)
+                            {
+                                for (int j = 0; j < _size.Y; j++)
+                                {
+                                    cellOver = _arena.GetCell(_mapX + i, _mapY + j);
+
+                                    if (cellOver != null)
+                                    {
+                                        if (cellOver._unit != null)
+                                        {
+                                            Console.WriteLine("Trouve un cell occupé déjà");
+                                            isPossibleToDrop = false;
+                                        }
+
+                                    }
+                                }
+                            }
+
+                            if (isPossibleToDrop)
                                 if (_isDroppable && cellOver._unit == null )
                                 {
                                     MoveTo(_dropZone._rect.TopLeft - _parent.XY);
@@ -217,7 +233,7 @@ namespace BattleSystem
                                 {
                                     Vector2 prevPosition = new Vector2(_prevMapX * _cellW, _prevMapY * _cellH);
 
-                                    MoveTo( prevPosition);
+                                    MoveTo(prevPosition);
                                     SetState(State.MOVE);
                                 }
                                 else
