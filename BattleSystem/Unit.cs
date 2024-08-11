@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using ImGuiNET;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Mugen.AI;
@@ -9,6 +10,7 @@ using Mugen.Event;
 using Mugen.GFX;
 using Mugen.Input;
 using Mugen.Map2D;
+using Mugen.Physics;
 
 
 namespace BattleSystem
@@ -77,6 +79,8 @@ namespace BattleSystem
         protected bool _isPossibleToDrop = false;
         public bool IsPossibleToDrop { get { return _isPossibleToDrop; } }
 
+        Addon.Loop _loop;
+
         public Unit(MouseControl mouse, Arena arena, int sizeW, int sizeH, int cellW, int cellH) 
         {
             _type = UID.Get<Unit>();
@@ -102,6 +106,11 @@ namespace BattleSystem
 
             _timer.SetTimer((int)Timer.CheckPath, TimerEvent.Time(0, 0, .02f));
             _timer.StartTimer((int)Timer.CheckPath);
+
+            _loop = new Addon.Loop(this);
+            _loop.SetLoop(0, -Geo.RAD_225 * .005f, Geo.RAD_225 *.005f, .001f, Loops.PINGPONG);
+            _loop.Start();
+            AddAddon(_loop);
         }
 
         public override Node Init()
@@ -172,14 +181,14 @@ namespace BattleSystem
                     if (_draggable._isDragged)
                     {
 
-                        if (_timer.OnTimer((int)Timer.CheckPath))
-                        {
-                            Point start = new Point(_prevMapX, _prevMapY);
-                            Point end = new Point(_mapX, _mapY);
+                        //if (_timer.OnTimer((int)Timer.CheckPath))
+                        //{
+                        //    Point start = new Point(_prevMapX, _prevMapY);
+                        //    Point end = new Point(_mapX, _mapY);
 
-                            if (_arena.IsInMap(start) && _arena.IsInMap(end))
-                                _path = new Astar2DList<Cell>(_arena.GetMap(), start, end, Find.Diagonal, 1, false)._path;
-                        }
+                        //    if (_arena.IsInMap(start) && _arena.IsInMap(end))
+                        //        _path = new Astar2DList<Cell>(_arena.GetMap(), start, end, Find.Diagonal, 1, true)._path;
+                        //}
 
                         Arena.CurrentDragged = this;
                         _isDropped = false;
@@ -238,7 +247,9 @@ namespace BattleSystem
 
                     if (_draggable._offDrag)
                     {
-                        _path.Clear();
+                        //if (_path != null)
+                        //    _path.Clear();
+
                         //if (_arena._isMouseOver)
                         {
                             Cell cellOver = null;
@@ -376,7 +387,15 @@ namespace BattleSystem
                     GFX.Rectangle(batch, AbsRectF.Extend(2), Color.Orange * .5f, 2f);
                 }
 
-                //batch.Draw(Game1._texAvatar1x1, AbsXY, Color.White);
+                Texture2D tex = Game1._texAvatar1x1;
+
+                if (_size.X == 2 && _size.Y == 2)
+                    tex = Game1._texAvatar2x2;
+
+                //batch.Draw(tex, AbsXY, Color.White);
+
+                GFX.Draw(batch, tex, Color.White, _loop._current, AbsXY + tex.Bounds.Size.ToVector2()/2, Position.CENTER, Vector2.One);
+
 
                 //if (_isDroppable)
                 //    GFX.Rectangle(batch, AbsRect, Color.Red * .5f, 2f);
@@ -386,21 +405,22 @@ namespace BattleSystem
             if (indexLayer == (int)Layers.Debug)
             {
                 //GFX.CenterStringXY(batch, Game1._fontMain, $"{_mapX}:{_mapY}\n{_isPossibleToDrop}", AbsRectF.TopCenter, Color.Yellow);
-                if (_path != null)
-                    if (_path.Count> 0)
-                    {
-                        for (int i = 1; i < _path.Count; i++)
-                        {
-                            Vector2 p1 = _path[i-1].ToVector2() * GetCellSize() + GetCellSize() / 2;
-                            Vector2 p2 = _path[i].ToVector2() * GetCellSize() + GetCellSize() / 2;
 
-                            if (i==1)
-                                GFX.Point(batch, p1 + _arena.AbsXY, 8f, Color.White);
+                //if (_path != null)
+                //    if (_path.Count > 0)
+                //    {
+                //        for (int i = 1; i < _path.Count; i++)
+                //        {
+                //            Vector2 p1 = _path[i - 1].ToVector2() * GetCellSize() + GetCellSize() / 2;
+                //            Vector2 p2 = _path[i].ToVector2() * GetCellSize() + GetCellSize() / 2;
 
-                            GFX.Line(batch, p1 + _arena.AbsXY, p2 + _arena.AbsXY, Color.White, 4f);
-                            GFX.Point(batch, p2 + _arena.AbsXY, 8f, Color.White);
-                        }
-                    }
+                //            if (i == 1)
+                //                GFX.Point(batch, p1 + _arena.AbsXY, 8f, Color.White);
+
+                //            GFX.Line(batch, p1 + _arena.AbsXY, p2 + _arena.AbsXY, Color.White * .25f, 4f);
+                //            GFX.Point(batch, p2 + _arena.AbsXY, 10f, Color.White * 1f);
+                //        }
+                //    }
 
             }
 
@@ -416,6 +436,7 @@ namespace BattleSystem
                     GFX.Line(batch, _from + _parent.XY + new Vector2(_cellW/2, _cellH/2), AbsXY + new Vector2(_cellW / 2, _cellH / 2), Color.White * alpha, _cellW/5);
 
                 }
+
 
             }
 

@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace BattleSystem
 {
-    public class Cell : BaseTile
+    public class Cell : PassLevel
     {
 
         Arena _arena;
@@ -126,7 +126,7 @@ namespace BattleSystem
 
         public Point CellSize { get; private set; }
 
-        Map2D<Cell> _cells;
+        List2D<Cell> _cells;
 
         public MouseControl _mouseControl;
 
@@ -151,7 +151,7 @@ namespace BattleSystem
             _mapH = mapH;
             MapSize = new Point(mapW, mapH);
 
-            _cells = new Map2D<Cell>(mapW, mapH);
+            _cells = new List2D<Cell>(mapW, mapH);
 
             _rectZone = new RectangleF(_rect.X, _rect.Y, _rect.Width, _rect.Height);
 
@@ -203,7 +203,7 @@ namespace BattleSystem
         }
         public List<List<Cell>> GetMap()
         {
-            return _cells.GetMap();
+            return _cells.Get2DList();
         }
         public bool IsInMap(int mapX, int mapY)
         {
@@ -398,12 +398,12 @@ namespace BattleSystem
 
             if (indexLayer == (int)Layers.Main)
             {
-                //GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .1f);
+                //GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .2f);
+                GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .15f);
 
-
-                GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .2f);
-                GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Gray * .25f, 3);
+                GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Black * .25f, 3);
                 GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Black * .5f, 1);
+
                 GFX.Rectangle(batch, AbsRect, Color.WhiteSmoke * .5f);
 
                 _dropZoneManager.Draw(batch);
@@ -438,7 +438,7 @@ namespace BattleSystem
                             color = Color.Red;
                         }
                         
-                        GFX.FillRectangle(batch, CurrentDragged.PrevPosition + AbsXY - (Vector2.One*(_loop._current - 20)), CurrentDragged.AbsRectF.GetSize() + (Vector2.One*2*(_loop._current - 20)), Color.Yellow * .75f);
+                        GFX.FillRectangle(batch, CurrentDragged.PrevPosition + AbsXY - (Vector2.One*(_loop._current - 20)), CurrentDragged.AbsRectF.GetSize() + (Vector2.One*2*(_loop._current - 20)), Color.Black * .75f);
                     }
 
                     if (_isMouseOver)
@@ -452,7 +452,7 @@ namespace BattleSystem
 
             if (indexLayer == (int)Layers.Debug)
             {
-                ShowValue(batch);
+                //ShowValue(batch);
 
                 DrawChilds(batch, gameTime, indexLayer);
             }

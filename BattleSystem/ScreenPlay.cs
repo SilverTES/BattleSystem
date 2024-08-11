@@ -45,10 +45,10 @@ namespace BattleSystem
             InitChilds();
 
             _arena.AddUnit(2, 1, 2, 2);
-            _arena.AddUnit(2, 6, 2, 1);
+            //_arena.AddUnit(2, 6, 2, 1);
+            //_arena.AddUnit(9, 2, 1, 2);
             _arena.AddUnit(6, 5, 1, 1);
             _arena.AddUnit(8, 4, 1, 1);
-            _arena.AddUnit(9, 2, 1, 2);
 
             return base.Init();
         }

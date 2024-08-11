@@ -42,6 +42,8 @@ namespace BattleSystem
         public static Texture2D _texHeart;
         public static Texture2D _texFace;
         public static Texture2D _texAvatar1x1;
+        public static Texture2D _texAvatar2x2;
+
         public static Texture2D _texBackground;
         public static Texture2D _texGlow0;
         public static Texture2D _texCursor;
@@ -116,6 +118,7 @@ namespace BattleSystem
             _texBackground = Content.Load<Texture2D>("Images/background00");
             _texGlow0 = Content.Load<Texture2D>("Images/circleGlow0");
             _texAvatar1x1 = Content.Load<Texture2D>("Images/avatar1x1");
+            _texAvatar2x2 = Content.Load<Texture2D>("Images/avatar2x2");
             _texCursor = Content.Load<Texture2D>("Images/mouseCursor");
             _texTrail = Content.Load<Texture2D>("Images/trail");
 
