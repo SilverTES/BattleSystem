@@ -24,12 +24,7 @@ namespace BattleSystem.Gui
         {
             BaseImage image = new BaseImage();
 
-            Console.WriteLine(Token.Get<string>(style, keyName + ".texture"));
-
             image._texture = Field.Get<Game1, Texture2D>(Token.Get<string>(style, keyName + ".texture"));
-
-            if (image._texture == null ) { Console.WriteLine($"Error load texture {keyName}"); }
-
             image._color = Style.ColorValue.GetColor(Token.Get<string>(style, keyName + ".color"));
             image._alpha = Token.Get<float>(style, keyName + ".alpha");
 

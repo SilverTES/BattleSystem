@@ -62,7 +62,6 @@ namespace BattleSystem
         public static Texture2D _texAvatar2x2;
 
         public static Texture2D _texBackground;
-        public static Texture2D _texGlow0;
         public static Texture2D _texCursor;
         public static Texture2D _texTrail;
 
@@ -80,7 +79,6 @@ namespace BattleSystem
         public static MouseState _mouseState = new();
 
         private ScreenPlay _screenPlay;
-
         
         public WindowManager WM => _windowManager;
         private WindowManager _windowManager;
@@ -89,15 +87,10 @@ namespace BattleSystem
 
         private static bool _isQuit = false;
 
-        //RenderTarget2D _targetAlphaBlend;
-        //RenderTarget2D _targetAdditive;
-        //RenderTarget2D _imGuiRenderTarget;
-
         private ImGuiRenderer _imGuiRenderer;
         string inputText = "";
         private ImFontPtr guiFont;
 
-        RasterizerState _rasterizerState;
         bool _isShowImGuiDebug = true;
 
         public static float _volumeMaster = .5f;
@@ -135,12 +128,10 @@ namespace BattleSystem
 
             _button = new StateEvent((int)ButtonDown.Count);
 
-            //Mouse.SetCursor(MouseCursor.FromTexture2D(_texCursor, 10, 2));
-
             var style = (JObject)JsonConvert.DeserializeObject(File.ReadAllText("Content/Misc/styleBtnFullscreen.json"));
 
             _btnFullScreen = (Gui.CheckBox)new Gui.CheckBox(MouseControl,"", style)
-                .SetPosition(ScreenW - 16, 16);
+                .SetPosition(ScreenW - 20, 20);
 
         }
         protected override void LoadContent()
@@ -153,7 +144,6 @@ namespace BattleSystem
             _texHeart = Content.Load<Texture2D>("Images/Heart");
             _texFace = Content.Load<Texture2D>("Images/avatar00");
             _texBackground = Content.Load<Texture2D>("Images/background00");
-            _texGlow0 = Content.Load<Texture2D>("Images/circleGlow0");
             _texAvatar1x1 = Content.Load<Texture2D>("Images/avatar1x1");
             _texAvatar2x2 = Content.Load<Texture2D>("Images/avatar2x2");
             _texCursor = Content.Load<Texture2D>("Images/mouseCursor");
@@ -172,7 +162,6 @@ namespace BattleSystem
             _texMouseCursor2 = Content.Load<Texture2D>("Images/mouse_cursor2");
             _mouseCursor = MouseCursor.FromTexture2D(_texMouseCursor, 0, 0);
             _mouseCursor2 = MouseCursor.FromTexture2D(_texMouseCursor2, 0, 0);
-
         }
 
         protected override void Update(GameTime gameTime)
@@ -184,6 +173,11 @@ namespace BattleSystem
             _mouse = _windowManager.GetMousePosition();
 
             MouseControl.Update((int)_mouse.X, (int)_mouse.Y, Mouse.GetState().LeftButton == ButtonState.Pressed ? 1 : 0);
+
+            if (MouseControl._isOverAny)
+                Mouse.SetCursor(_mouseCursor2);
+            else
+                Mouse.SetCursor(_mouseCursor);
 
             _button.BeginSetEvents();
             _button.SetEvent((int)ButtonDown.F1, Keyboard.GetState().IsKeyDown(Keys.F1));
@@ -202,7 +196,6 @@ namespace BattleSystem
 
             if (_button.OffEvent((int)ButtonDown.F11))
             {
-                //Console.WriteLine("Toggle Fullscreen");
                 _windowManager.ToggleFullscreen();
             }
 

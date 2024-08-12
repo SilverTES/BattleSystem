@@ -53,18 +53,14 @@ namespace BattleSystem
 
         Addon.Loop _loop;
 
-        Game1 _game;
-
         DropZoneManager _dropZoneManager;
         DropZone _dropZoneInGrid;
         
         List<Node> _listItems;
         
-        public Arena(Game1 game, int mapW, int mapH, int cellW = 32, int cellH = 32) 
+        public Arena(int mapW, int mapH, int cellW = 32, int cellH = 32) 
         { 
-            _game = game;
-
-            _mapW = mapW;
+             _mapW = mapW;
             _mapH = mapH;
             MapSize = new Point(mapW, mapH);
 

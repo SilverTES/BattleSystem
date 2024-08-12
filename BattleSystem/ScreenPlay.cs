@@ -14,6 +14,9 @@ namespace BattleSystem
         public const int CellW = 128;
         public const int CellH = 128;
 
+        public const int ArenaW = 12;
+        public const int ArenaH = 7;
+
         Game1 _game;
         
         Addon.Loop _loop;
@@ -28,23 +31,19 @@ namespace BattleSystem
 
             SetSize(Game1.ScreenW, Game1.ScreenH);
 
-            //_mouseControl = new();
-
             _loop = new(this);
             _loop.SetLoop(0, -8f, 8f, .05f, Mugen.Animation.Loops.PINGPONG);
             _loop.Start();
 
             AddAddon(_loop);
 
-            _arena = new Arena(_game, 12, 8, CellW, CellH);
-            _arena.SetPosition(320, 20);
+            _arena = new Arena(ArenaW, ArenaH, CellW, CellH);
+            _arena.SetPosition(320, 60);
             _arena.AppendTo(this);
 
             _layerGui = new Node();
 
             var style = (JObject)JsonConvert.DeserializeObject(File.ReadAllText("Content/Misc/styleBtn.json"));
-
-
 
             _btnQuit = (Gui.Button)new Gui.Button(Game1.MouseControl, "Quit", style)
                 .SetPosition(160, Game1.ScreenH - 40)
@@ -56,30 +55,24 @@ namespace BattleSystem
             InitChilds();
 
             _arena.AddUnit(9, 1, 2, 2);
-            //_arena.AddUnit(2, 6, 2, 1);
-            //_arena.AddUnit(9, 2, 1, 2);
-            _arena.AddUnit(6, 5, 1, 1);
-            _arena.AddUnit(4, 3, 1, 1);
-            _arena.AddUnit(7, 6, 1, 1);
-            _arena.AddUnit(8, 4, 1, 1);
+
+            for (int i = 0; i < 8; i++)
+            {
+
+                int x = Misc.Rng.Next(0, ArenaW);
+                int y = Misc.Rng.Next(0, ArenaH);
+
+                _arena.AddUnit(x, y, 1, 1);
+
+            }
 
             return base.Init();
         }
         public override Node Update(GameTime gameTime)
         {
 
-            //if (_mouseControl._onClick) Console.WriteLine("On Click");
-            //if (_mouseControl._offClick) Console.WriteLine("Off Click");
-
-            if (Game1.MouseControl._isOverAny)
-                Mouse.SetCursor(Game1._mouseCursor2);
-            else
-                Mouse.SetCursor(Game1._mouseCursor);
-
-
             if (_btnQuit._navi._onPress)
                 Game1.Quit();
-
 
             //_game.IsMouseVisible = !_mouseControl._isActiveDrag; // hide mouse when drag !
 

@@ -61,6 +61,7 @@ namespace BattleSystem
         protected Vector2 _prevPosition = new();
         public Vector2 PrevPosition { get { return _prevPosition; } }
 
+        protected List<Point> _attackPoints = new List<Point>();
 
         protected int _cellW;
         protected int _cellH;
@@ -194,14 +195,13 @@ namespace BattleSystem
                     break;
                 case State.WAIT:
 
+                    // Keep the cell if is dropped and set draggable
                     if (_isDropped)
                     {
                         _arena.SetCellUnit(_mapPosition.X, _mapPosition.Y, this);
+                        _draggable.SetDraggable(true);
                     }
-                    // Keep the cell if is dropped
 
-
-                    _draggable.SetDraggable(true);
 
                     if (_navi._isMouseOver && _mouse._onClick && !_mouse._isOverAny && !_mouse._isActiveReSize)
                     {
@@ -226,7 +226,6 @@ namespace BattleSystem
 
                         // test si l'unit dragué est le même unit dans la case , si oui on enlève l'unit de la case
                         var cellOver = _arena.GetCell(_mapPosition.X, _mapPosition.Y);
-
 
                         // Test si l'unité est sur ces traces, si oui il efface
                         if (cellOver != null)
@@ -266,19 +265,6 @@ namespace BattleSystem
 
                     }
                     
-                    if (_draggable._onDragged)
-                    {
-                        _isDropped = false;
-
-                        _prevPosition = XY;
-                        _prevMapPosition = _mapPosition;
-
-                        //_prevMapX = _mapPosition.X;
-                        //_prevMapY = _mapPosition.Y;
-
-                        //Console.WriteLine($"On Drag : {_prevPosition} : {_prevMapX}x{_prevMapY}");
-                    }
-
                     _backToPrevPosition = false;
 
                     if (_draggable._offDragged)
@@ -363,6 +349,19 @@ namespace BattleSystem
 
                     }
 
+                    if (_draggable._onDragged)
+                    {
+                        _isDropped = false;
+
+                        _prevPosition = XY;
+                        _prevMapPosition = _mapPosition;
+
+                        //_prevMapX = _mapPosition.X;
+                        //_prevMapY = _mapPosition.Y;
+
+                        //Console.WriteLine($"On Drag : {_prevPosition} : {_prevMapX}x{_prevMapY}");
+                    }
+
                     break;
                 case State.MOVE:
 
@@ -432,7 +431,7 @@ namespace BattleSystem
         {
             if (indexLayer == (int)Layers.Main)
             {
-                GFX.FillRectangle(batch, AbsRectF.Extend(-4), Color.Black * .8f);
+                //GFX.FillRectangle(batch, AbsRectF.Extend(-4), Color.Black * .8f);
 
                 if (_draggable._isDragged)
                 {

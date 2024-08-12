@@ -70,10 +70,13 @@ namespace BattleSystem
         {
             if (indexLayer == (int)Layers.BackFX)
             {
-                Rectangle rectCursor = new Rectangle(_position.ToPoint() + arenaTopLeft, _size);
+                if (!Game1.MouseControl._isActiveDrag)
+                {
+                    Rectangle rectCursor = new Rectangle(_position.ToPoint() + arenaTopLeft, _size);
 
-                GFX.FillRectangle(batch, RectangleF.Extend(rectCursor, -(1 - _alpha) * 20f), Color.White * _alpha * .5f);
-                GFX.Rectangle(batch, RectangleF.Extend(rectCursor, -(1 - _alpha) * 20f), Color.White * _alpha * .5f);
+                    GFX.FillRectangle(batch, RectangleF.Extend(rectCursor, -(1 - _alpha) * 20f), Color.White * _alpha * .5f);
+                    GFX.Rectangle(batch, RectangleF.Extend(rectCursor, -(1 - _alpha) * 20f), Color.White * _alpha * .5f);
+                }
             }
             if (indexLayer == (int)Layers.Main)
             {
