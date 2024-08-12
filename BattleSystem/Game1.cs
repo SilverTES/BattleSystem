@@ -87,7 +87,7 @@ namespace BattleSystem
         private ImFontPtr guiFont;
 
         RasterizerState _rasterizerState;
-        bool _isShowImGui = false;
+        bool _isShowImGuiDebug = false;
 
         public static float _volumeMaster = .5f;
         #endregion
@@ -171,7 +171,7 @@ namespace BattleSystem
 
             if (_button.OnEvent((int)ButtonDown.F1))
             {
-                _isShowImGui = !_isShowImGui;
+                _isShowImGuiDebug = !_isShowImGuiDebug;
             }
 
             if (_button.OnEvent((int)ButtonDown.R))
@@ -195,7 +195,7 @@ namespace BattleSystem
 
         protected override void Draw(GameTime gameTime)
         {
-            if (_isShowImGui)
+            if (_isShowImGuiDebug)
             {
                 ScreenManager.BeginDraw((int)Layers.ImGui);
 
@@ -249,10 +249,12 @@ namespace BattleSystem
             ScreenManager.ShowLayer((int)Layers.Gui, Color.White);
             ScreenManager.ShowLayer((int)Layers.FrontFX, Color.White);
 
-            ScreenManager.ShowLayer((int)Layers.Debug, Color.White);
 
-            if (_isShowImGui)
+            if (_isShowImGuiDebug)
+            {
+                ScreenManager.ShowLayer((int)Layers.Debug, Color.White);
                 ScreenManager.ShowLayer((int)Layers.ImGui, Color.White);
+            }
 
             FrameCounter.Draw(_batch, _fontMain, Color.Yellow, 10, 10);
 

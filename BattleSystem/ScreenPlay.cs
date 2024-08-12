@@ -86,6 +86,7 @@ namespace BattleSystem
 
             if (_btnAction._navi._onPress)
             {
+                Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, .5f);
                 //Console.WriteLine("btnAction Pressed !");
                 foreach (Node node in _arena.GroupOf(new int[] { UID.Get<Unit>() }))
                 {

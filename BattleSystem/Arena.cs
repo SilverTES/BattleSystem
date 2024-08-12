@@ -349,8 +349,8 @@ namespace BattleSystem
                 //GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .2f);
                 GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .15f);
 
-                GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Black * .25f, 3);
-                GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Black * .5f, 1);
+                GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Gray * .25f, 3);
+                GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Black * .75f, 1);
 
                 GFX.Rectangle(batch, AbsRect, Color.WhiteSmoke * .5f);
 
@@ -401,7 +401,7 @@ namespace BattleSystem
 
             if (indexLayer == (int)Layers.Debug)
             {
-                //ShowValue(batch);
+                ShowValue(batch);
 
                 DrawChilds(batch, gameTime, indexLayer);
             }

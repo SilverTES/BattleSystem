@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.NetworkInformation;
 using ImGuiNET;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -61,7 +62,7 @@ namespace BattleSystem
         public Point MapPosition { get { return _mapPosition; } }
 
         // Come back to prev map position when drop in case is not possible
-        protected bool _backPosition = false;
+        protected bool _backToPrevPosition = false;
         protected int _prevMapX;
         protected int _prevMapY;
         protected Vector2 _prevPosition = new();
@@ -274,10 +275,11 @@ namespace BattleSystem
                         
                     }
 
-                    _backPosition = false;
+                    _backToPrevPosition = false;
 
                     if (_draggable._offDrag)
                     {
+                        Console.Write("<unit offDrag>");
                         //if (_path != null)
                         //    _path.Clear();
 
@@ -331,12 +333,12 @@ namespace BattleSystem
                                     Vector2 prevPosition = new Vector2(_prevMapX * _cellW, _prevMapY * _cellH);
 
                                     MoveTo(prevPosition);
-                                    _backPosition = true;
+                                    _backToPrevPosition = true;
                                 }
                                 else
                                 {
                                     MoveTo(_prevPosition);
-                                    _backPosition = true;
+                                    _backToPrevPosition = true;
                                 }
                             }
 
@@ -350,7 +352,7 @@ namespace BattleSystem
                             else
                             {
                                 MoveTo(_prevPosition);
-                                _backPosition = true;
+                                _backToPrevPosition = true;
                             }
                         }
 
@@ -378,6 +380,8 @@ namespace BattleSystem
 
                         _arena.SetCellUnit(_mapPosition.X, _mapPosition.Y, this);
 
+                        bool playSound = false;
+
                         if (_isDroppable)
                         {
                             _isDroppable = false;
@@ -386,13 +390,16 @@ namespace BattleSystem
                             _dropZone._nearNode = this;
                             _dropZone._containedNode = this;
                             //Console.WriteLine("DropZone ContainedNode Affected !");
-                            Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, .5f);
+                            playSound = true;
                         }
-                        else if (_backPosition)
+
+                        if (_backToPrevPosition)
                         {
-                            Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, .5f);
-                            //Console.WriteLine("Back Position");
+                            playSound = true;
                         }
+
+                        if (playSound)
+                            Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, .5f);
 
                         SetState(State.WAIT);
                     }
