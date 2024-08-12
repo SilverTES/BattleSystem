@@ -251,8 +251,6 @@ namespace BattleSystem
             {
                 case State.PLAYER_PHASE:
 
-                    _rectZoneDroppable.X = _rect.X;
-                    _rectZoneDroppable.Y = _rect.Y;
 
                     if (CurrentUnitDragged != null)
                     {
@@ -267,6 +265,9 @@ namespace BattleSystem
                     {
                         _mouse.X = _mouseControl.GetPosition().X - _x;
                         _mouse.Y = _mouseControl.GetPosition().Y - _y;
+
+                        _rectZoneDroppable.X = _rect.X;
+                        _rectZoneDroppable.Y = _rect.Y;
                     }
 
                     _isMouseOverGrid = Misc.PointInRect(_mouse.X + _x + _cellW/2, _mouse.Y + _y + _cellH/2, _rectZoneDroppable);
@@ -283,21 +284,6 @@ namespace BattleSystem
                     _cursor.Y = _mapCursor.Y * _cellH;
 
 
-                    CurrentUnitDragged = null;
-                    SortZAscending();
-                    UpdateChildsSort(gameTime);
-                    UpdateCells();
-
-                    
-                    // reset focus
-                    //if (_mouseControl._onClick)
-                    //{
-                    //    foreach (Node node in _listItems)
-                    //    {
-                    //        if (!node._navi._isMouseOver)// && !node._resizable._isMouseOver)
-                    //            node._navi._isFocus = false;
-                    //    }
-                    //}
 
                     // Manage Drag & Drop Zone
                     if (_isMouseOverGrid && _mouseControl._down)
@@ -310,6 +296,22 @@ namespace BattleSystem
                         //if (GetCellUnit(_mapCursor.X, _mapCursor.Y) == null)
                             _dropZoneInGrid.UpdateZone(_rectCursor, -10);
                     }
+
+                    CurrentUnitDragged = null;
+                    SortZAscending();
+                    UpdateChildsSort(gameTime);
+                    UpdateCells();
+                    
+                    // reset focus
+                    //if (_mouseControl._onClick)
+                    //{
+                    //    foreach (Node node in _listItems)
+                    //    {
+                    //        if (!node._navi._isMouseOver)// && !node._resizable._isMouseOver)
+                    //            node._navi._isFocus = false;
+                    //    }
+                    //}
+
                     break;
                 case State.ENEMY_PHASE:
 

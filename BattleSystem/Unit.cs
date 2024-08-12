@@ -35,6 +35,7 @@ namespace BattleSystem
             LAST
         }
 
+        // Statistic of the Unit
         protected State _state = State.WAIT;
         protected Stats _stats;
 
@@ -47,24 +48,21 @@ namespace BattleSystem
         protected int _ticMove;
         protected int _tempoMove;
 
+        // Dependencies
         protected Arena _arena;
 
         public List<Point> _path = null;
 
         protected Point _size = new Point();
-
         public Point Size { get { return _size; } }
-
-        //protected int _mapX;
-        //protected int _mapY;
-
         protected Point _mapPosition = new();
         public Point MapPosition { get { return _mapPosition; } }
 
         // Come back to prev map position when drop in case is not possible
         protected bool _backToPrevPosition = false;
-        protected int _prevMapX;
-        protected int _prevMapY;
+        //protected int _prevMapX;
+        //protected int _prevMapY;
+        protected Point _prevMapPosition = new();
         protected Vector2 _prevPosition = new();
         public Vector2 PrevPosition { get { return _prevPosition; } }
 
@@ -207,6 +205,7 @@ namespace BattleSystem
                     {
                         _parent.GotoFront(_index);
                     }
+
                     if (_draggable._isDragged)
                     {
                         if (_timer.OnTimer((int)Timer.Trail))
@@ -263,23 +262,22 @@ namespace BattleSystem
 
                     }
                     
-                    if (_draggable._onDrag)
+                    if (_draggable._onDragged)
                     {
                         _prevPosition = XY;
+                        _prevMapPosition = _mapPosition;
 
-                        _prevMapX = _mapPosition.X;
-                        _prevMapY = _mapPosition.Y;
+                        //_prevMapX = _mapPosition.X;
+                        //_prevMapY = _mapPosition.Y;
 
                         //Console.WriteLine($"On Drag : {_prevPosition} : {_prevMapX}x{_prevMapY}");
-
-                        
                     }
 
                     _backToPrevPosition = false;
 
-                    if (_draggable._offDrag)
+                    if (_draggable._offDragged)
                     {
-                        Console.Write("<unit offDrag>");
+                        //Console.Write("<unit offDrag>");
                         //if (_path != null)
                         //    _path.Clear();
 
@@ -330,7 +328,8 @@ namespace BattleSystem
                             {
                                 if (Misc.PointInRect(_prevPosition, _arena.AbsRectF))
                                 {
-                                    Vector2 prevPosition = new Vector2(_prevMapX * _cellW, _prevMapY * _cellH);
+                                    //Vector2 prevPosition = new Vector2(_prevMapX * _cellW, _prevMapY * _cellH);
+                                    Vector2 prevPosition = _prevMapPosition.ToVector2() * _cellW;
 
                                     MoveTo(prevPosition);
                                     _backToPrevPosition = true;
@@ -406,7 +405,7 @@ namespace BattleSystem
                     else
                     {
                         // Efface les traces de l'unit dans l'Arena quand elle bouge toute seule
-                        if (!_isDroppable)
+                        if (!_isDroppable || !_draggable._isDragged)
                             _arena.EraseCellUnit(_mapPosition.X, _mapPosition.Y, this);
                     }
                     break;

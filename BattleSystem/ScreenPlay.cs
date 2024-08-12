@@ -8,7 +8,6 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.IO;
 using System;
-using System.Xml;
 
 namespace BattleSystem
 {
@@ -77,6 +76,10 @@ namespace BattleSystem
 
             _mouse.X = _game._mouse.X;
             _mouse.Y = _game._mouse.Y;
+
+
+            //if (_mouseControl._onClick) Console.WriteLine("On Click");
+            //if (_mouseControl._offClick) Console.WriteLine("Off Click");
 
             if (_mouseControl._isOverAny)
                 Mouse.SetCursor(Game1._mouseCursor2);
