@@ -23,7 +23,6 @@ namespace BattleSystem
         Point _size = new();
 
         public bool _isMouseOver = false;
-        public bool _isSelected = false;
 
         Rectangle _rect;
 
@@ -48,9 +47,8 @@ namespace BattleSystem
         public void Update()
         {
             _isMouseOver = false;
-            _isSelected = false;
 
-            if (Misc.PointInRect(_arena._mouseControl.GetPosition() - _arena.XY.ToPoint(), _rect))
+            if (Misc.PointInRect(Game1.MouseControl.GetPosition() - _arena.XY.ToPoint(), _rect))
             {
                 _isMouseOver = true;
             }
@@ -74,18 +72,8 @@ namespace BattleSystem
             {
                 Rectangle rectCursor = new Rectangle(_position.ToPoint() + arenaTopLeft, _size);
 
-                //if (!_isMouseOver)
-                {
-                    GFX.FillRectangle(batch, RectangleF.Extend(rectCursor, -(1 - _alpha) * 20f), Color.White * _alpha * .5f);
-                    GFX.Rectangle(batch, RectangleF.Extend(rectCursor, -(1 - _alpha) * 20f), Color.White * _alpha * .5f);
-
-                    //GFX.Draw(batch, Game1._texGlow0, Color.White * _alpha * .5f, 0, _position + arenaTopLeft.ToVector2() + (_size.ToVector2() /2), Game1._texGlow0.Bounds.Size.ToVector2() / 2, Vector2.One * _alpha * .03f);
-                }
-
-                if (_isSelected)
-                {
-                    GFX.FillRectangle(batch, rectCursor, Color.DarkSlateBlue * .5f);
-                }
+                GFX.FillRectangle(batch, RectangleF.Extend(rectCursor, -(1 - _alpha) * 20f), Color.White * _alpha * .5f);
+                GFX.Rectangle(batch, RectangleF.Extend(rectCursor, -(1 - _alpha) * 20f), Color.White * _alpha * .5f);
             }
             if (indexLayer == (int)Layers.Main)
             {

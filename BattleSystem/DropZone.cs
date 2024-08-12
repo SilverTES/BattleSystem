@@ -3,7 +3,6 @@ using Microsoft.Xna.Framework.Graphics;
 using Mugen.Core;
 using Mugen.GFX;
 using Mugen.Physics;
-using System;
 using System.Collections.Generic;
 
 namespace BattleSystem

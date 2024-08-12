@@ -7,8 +7,11 @@ using Mugen.Core;
 using Mugen.Event;
 using Mugen.GFX;
 using Mugen.ImGui;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 using System;
-using System.Net.NetworkInformation;
+using System.IO;
+using Mugen.Input;
 
 namespace BattleSystem
 {
@@ -38,6 +41,9 @@ namespace BattleSystem
     public class Game1 : Game
     {
         #region Attributes
+
+        Gui.CheckBox _btnFullScreen;
+
         public const int ScreenW = 1920;
         public const int ScreenH = 1080;
 
@@ -45,6 +51,7 @@ namespace BattleSystem
 
         public static MouseCursor _mouseCursor;
         public static MouseCursor _mouseCursor2;
+        public static MouseControl MouseControl;
 
         public static Texture2D _texMouseCursor;
         public static Texture2D _texMouseCursor2;
@@ -60,6 +67,7 @@ namespace BattleSystem
         public static Texture2D _texTrail;
 
         public static Texture2D _texBtnBase;
+        public static Texture2D _texBtnFullscreen;
 
         public static Effect _effectBasic;
         public static Effect _effectColor;
@@ -69,14 +77,17 @@ namespace BattleSystem
         public static string _hello = "Hello tout le monde";
 
         public Vector2 _mouse;
-        public static MouseState _mouseState;
+        public static MouseState _mouseState = new();
 
         private ScreenPlay _screenPlay;
 
+        
         public WindowManager WM => _windowManager;
         private WindowManager _windowManager;
         private SpriteBatch _batch;
         private StateEvent _button;
+
+        private static bool _isQuit = false;
 
         //RenderTarget2D _targetAlphaBlend;
         //RenderTarget2D _targetAdditive;
@@ -87,7 +98,7 @@ namespace BattleSystem
         private ImFontPtr guiFont;
 
         RasterizerState _rasterizerState;
-        bool _isShowImGuiDebug = false;
+        bool _isShowImGuiDebug = true;
 
         public static float _volumeMaster = .5f;
         #endregion
@@ -113,6 +124,8 @@ namespace BattleSystem
         {
             base.Initialize();
 
+            MouseControl = new();
+
             _screenPlay = new ScreenPlay(this);
 
             GFX.Init(GraphicsDevice); // don't forget to initialize when to draw GFX shapes etc
@@ -123,6 +136,11 @@ namespace BattleSystem
             _button = new StateEvent((int)ButtonDown.Count);
 
             //Mouse.SetCursor(MouseCursor.FromTexture2D(_texCursor, 10, 2));
+
+            var style = (JObject)JsonConvert.DeserializeObject(File.ReadAllText("Content/Misc/styleBtnFullscreen.json"));
+
+            _btnFullScreen = (Gui.CheckBox)new Gui.CheckBox(MouseControl,"", style)
+                .SetPosition(ScreenW - 16, 16);
 
         }
         protected override void LoadContent()
@@ -142,6 +160,7 @@ namespace BattleSystem
             _texTrail = Content.Load<Texture2D>("Images/trail");
 
             _texBtnBase = Content.Load<Texture2D>("Images/Button0");
+            _texBtnFullscreen = Content.Load<Texture2D>("Images/ButtonFullscreen");
 
             _effectBasic = Content.Load<Effect>("Effects/effectBasic");
             _effectColor = Content.Load<Effect>("Effects/effectColor");
@@ -164,6 +183,8 @@ namespace BattleSystem
             _windowManager.Update(_mouseState.Position.ToVector2());
             _mouse = _windowManager.GetMousePosition();
 
+            MouseControl.Update((int)_mouse.X, (int)_mouse.Y, Mouse.GetState().LeftButton == ButtonState.Pressed ? 1 : 0);
+
             _button.BeginSetEvents();
             _button.SetEvent((int)ButtonDown.F1, Keyboard.GetState().IsKeyDown(Keys.F1));
             _button.SetEvent((int)ButtonDown.F11, Keyboard.GetState().IsKeyDown(Keys.F11));
@@ -185,14 +206,25 @@ namespace BattleSystem
                 _windowManager.ToggleFullscreen();
             }
 
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape) || _isQuit)
                 Exit();
 
             ScreenManager.Update(gameTime);
 
+            _btnFullScreen.Update(gameTime);
+
+            if (_btnFullScreen._navi._onRelease)
+            {
+                _windowManager.ToggleFullscreen();
+                _btnFullScreen.SetChecked(!_windowManager.IsFullscreen);
+            }
+
             base.Update(gameTime);
         }
-
+        public static void Quit()
+        {
+            _isQuit = true;
+        }
         protected override void Draw(GameTime gameTime)
         {
             if (_isShowImGuiDebug)
@@ -240,6 +272,7 @@ namespace BattleSystem
 
             ScreenManager.BeginDraw((int)Layers.Gui, SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap);
             ScreenManager.DrawLayer((int)Layers.Gui, gameTime);
+            _btnFullScreen.Draw(_batch, gameTime,(int)Layers.Gui);
             ScreenManager.EndDraw();
 
 

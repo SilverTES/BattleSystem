@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.NetworkInformation;
-using ImGuiNET;
+﻿using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Mugen.AI;
 using Mugen.Animation;
 using Mugen.Core;
 using Mugen.Event;
 using Mugen.GFX;
 using Mugen.Input;
-using Mugen.Map2D;
 using Mugen.Physics;
 
 
@@ -75,7 +70,7 @@ namespace BattleSystem
         protected Addon.Draggable _draggable;
 
         public bool _isDroppable = false;
-        public bool _isDropped = false;
+        public bool _isDropped = true;
         public DropZone _dropZone;
         protected bool _isPossibleToDrop = false;
         public bool IsPossibleToDrop { get { return _isPossibleToDrop; } }
@@ -199,6 +194,13 @@ namespace BattleSystem
                     break;
                 case State.WAIT:
 
+                    if (_isDropped)
+                    {
+                        _arena.SetCellUnit(_mapPosition.X, _mapPosition.Y, this);
+                    }
+                    // Keep the cell if is dropped
+
+
                     _draggable.SetDraggable(true);
 
                     if (_navi._isMouseOver && _mouse._onClick && !_mouse._isOverAny && !_mouse._isActiveReSize)
@@ -220,11 +222,13 @@ namespace BattleSystem
                         //}
 
                         Arena.CurrentUnitDragged = this;
-                        _isDropped = false;
+                        
 
                         // test si l'unit dragué est le même unit dans la case , si oui on enlève l'unit de la case
                         var cellOver = _arena.GetCell(_mapPosition.X, _mapPosition.Y);
 
+
+                        // Test si l'unité est sur ces traces, si oui il efface
                         if (cellOver != null)
                             if (cellOver._unit != null)
                             {
@@ -264,6 +268,8 @@ namespace BattleSystem
                     
                     if (_draggable._onDragged)
                     {
+                        _isDropped = false;
+
                         _prevPosition = XY;
                         _prevMapPosition = _mapPosition;
 
@@ -394,6 +400,7 @@ namespace BattleSystem
 
                         if (_backToPrevPosition)
                         {
+                            _isDropped = true;
                             playSound = true;
                         }
 
@@ -453,7 +460,7 @@ namespace BattleSystem
 
             if (indexLayer == (int)Layers.Debug)
             {
-                //GFX.CenterStringXY(batch, Game1._fontMain, $"{_mapX}:{_mapY}\n{_isPossibleToDrop}", AbsRectF.TopCenter, Color.Yellow);
+                GFX.CenterStringXY(batch, Game1._fontMain, $"{_mapPosition}\n{_isDropped}\n{_state}", AbsRectF.BottomCenter, Color.Yellow);
 
                 //if (_path != null)
                 //    if (_path.Count > 0)

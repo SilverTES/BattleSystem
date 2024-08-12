@@ -72,7 +72,7 @@ namespace BattleSystem.Gui
         protected int _curAnimateIndex = 0;
         protected List<string> _listAnimates = new List<string>();
 
-        protected Rectangle _shape;
+        protected RectangleF _shape;
 
         protected Animate _animate = new();
         protected AnimateVec2 _animateVec2 = new();
@@ -185,7 +185,7 @@ namespace BattleSystem.Gui
         {
             UpdateRect();
 
-            _shape = new Rectangle((int)(AbsX - _oX + _animateVec2.Value().X), (int)(AbsY - _oY + _animateVec2.Value().Y), (int)_rect.Width, (int)_rect.Height);
+            _shape = new RectangleF((int)(AbsX - _oX + _animateVec2.Value().X), (int)(AbsY - _oY + _animateVec2.Value().Y), (int)_rect.Width, (int)_rect.Height);
 
             //_navi._isPress = false
             _navi._onMouseOut = false;
@@ -297,9 +297,11 @@ namespace BattleSystem.Gui
             if (image._texture != null)
             {
                 if (_isShadow)
-                    batch.Draw(image._texture, _shape, image._rect, _shadowColor * _shadowAlpha);
+                    //batch.Draw(image._texture, _shape.TopLeft, image._rect, _shadowColor * _shadowAlpha);
+                    batch.Draw(image._texture, (Rectangle)_shape, image._rect, _shadowColor * _shadowAlpha);
 
-                batch.Draw(image._texture, _shape, image._rect, image._color * image._alpha);
+                //batch.Draw(image._texture, _shape.TopLeft, image._rect, image._color * image._alpha);
+                batch.Draw(image._texture, (Rectangle)_shape, image._rect, image._color * image._alpha);
             }
 
             return this;
@@ -336,7 +338,8 @@ namespace BattleSystem.Gui
 
                 if (fgImage != null)
                     if (fgImage._texture != null)
-                        batch.Draw(fgImage._texture, _shape, fgImage._rect, fgImage._color * fgImage._alpha);
+                        //batch.Draw(fgImage._texture, _shape.TopLeft, fgImage._rect, fgImage._color * fgImage._alpha);
+                        batch.Draw(fgImage._texture, (Rectangle)_shape, fgImage._rect, fgImage._color * fgImage._alpha);
             }
 
             return base.Draw(batch, gameTime, indexLayer);

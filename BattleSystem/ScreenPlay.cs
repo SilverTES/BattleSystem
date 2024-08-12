@@ -3,11 +3,9 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Mugen.Core;
 using Mugen.GFX;
-using Mugen.Input;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.IO;
-using System;
 
 namespace BattleSystem
 {
@@ -16,15 +14,12 @@ namespace BattleSystem
         public const int CellW = 128;
         public const int CellH = 128;
 
-        Vector2 _mouse;
         Game1 _game;
-        public MouseControl _mouseControl;
         
         Addon.Loop _loop;
-
         Arena _arena;
 
-        Gui.Button _btnAction;
+        Gui.Button _btnQuit;
 
         Node _layerGui;
         public ScreenPlay(Game1 game) 
@@ -33,15 +28,15 @@ namespace BattleSystem
 
             SetSize(Game1.ScreenW, Game1.ScreenH);
 
-            _mouseControl = new();
+            //_mouseControl = new();
 
             _loop = new(this);
-            _loop.SetLoop(0, -4f, 4f, .05f, Mugen.Animation.Loops.PINGPONG);
+            _loop.SetLoop(0, -8f, 8f, .05f, Mugen.Animation.Loops.PINGPONG);
             _loop.Start();
 
             AddAddon(_loop);
 
-            _arena = new Arena(_game, _mouseControl, 12, 8, CellW, CellH);
+            _arena = new Arena(_game, 12, 8, CellW, CellH);
             _arena.SetPosition(320, 20);
             _arena.AppendTo(this);
 
@@ -49,11 +44,11 @@ namespace BattleSystem
 
             var style = (JObject)JsonConvert.DeserializeObject(File.ReadAllText("Content/Misc/styleBtn.json"));
 
-            _btnAction = (Gui.Button)new Gui.Button(_mouseControl,"Action", style)
-                .SetPosition(Game1.ScreenW - 140, Game1.ScreenH - 40)
-                .AppendTo(_layerGui);
 
-            Console.WriteLine(_btnAction);
+
+            _btnQuit = (Gui.Button)new Gui.Button(Game1.MouseControl, "Quit", style)
+                .SetPosition(160, Game1.ScreenH - 40)
+                .AppendTo(_layerGui);
 
         }
         public override Node Init()
@@ -72,35 +67,19 @@ namespace BattleSystem
         }
         public override Node Update(GameTime gameTime)
         {
-            _mouseControl.Update((int)_game._mouse.X, (int)_game._mouse.Y, Mouse.GetState().LeftButton == ButtonState.Pressed ? 1 : 0);
-
-            _mouse.X = _game._mouse.X;
-            _mouse.Y = _game._mouse.Y;
-
 
             //if (_mouseControl._onClick) Console.WriteLine("On Click");
             //if (_mouseControl._offClick) Console.WriteLine("Off Click");
 
-            if (_mouseControl._isOverAny)
+            if (Game1.MouseControl._isOverAny)
                 Mouse.SetCursor(Game1._mouseCursor2);
             else
                 Mouse.SetCursor(Game1._mouseCursor);
 
 
-            if (_btnAction._navi._onPress)
-            {
-                Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, .5f);
-                //Console.WriteLine("btnAction Pressed !");
-                foreach (Node node in _arena.GroupOf(new int[] { UID.Get<Unit>() }))
-                {
-                    Unit unit = node.This<Unit>();
+            if (_btnQuit._navi._onPress)
+                Game1.Quit();
 
-                    if (_arena.IsInMap(unit.MapPosition))
-                        unit.MoveTo(unit.MapPosition + new Point(-1, 0), 32);
-
-                }
-
-            }
 
             //_game.IsMouseVisible = !_mouseControl._isActiveDrag; // hide mouse when drag !
 
@@ -138,12 +117,11 @@ namespace BattleSystem
 
                 //batch.Draw(Game1._texBtnBase, Vector2.One * 20, Color.White);
 
-                _btnAction.Draw(batch, gameTime, (int)Layers.Gui);
             }
 
             if (indexLayer == (int)Layers.Gui)
             {
-                //DrawChilds(batch, gameTime, indexLayer);
+                DrawChilds(batch, gameTime, indexLayer);
                 _layerGui.DrawChilds(batch, gameTime, indexLayer);
 
             }
@@ -151,7 +129,6 @@ namespace BattleSystem
             if (indexLayer == (int)Layers.FrontFX)
             {
                 DrawChilds(batch, gameTime, indexLayer);
-
                 _layerGui.DrawChilds(batch, gameTime, indexLayer);
 
                 //GFX.Sight(batch, _mouse, Game1.ScreenW, Game1.ScreenH, Color.Red * .5f, 3f);
