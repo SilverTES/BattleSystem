@@ -33,7 +33,7 @@ namespace BattleSystem
 
         public override Node Draw(SpriteBatch batch, GameTime gameTime, int indexLayer)
         {
-            if (indexLayer == (int)Layers.FX)
+            if (indexLayer == (int)Layers.BackFX)
             {
                 GFX.Line(batch, _start, _goal, Color.Red * .5f, 40f);
             }

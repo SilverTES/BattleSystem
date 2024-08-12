@@ -1,0 +1,112 @@
+﻿{
+  "visible": "true",
+  "shadow": {
+    "visible": true,
+    "color": "black",
+    "alpha": 0.4,
+    "offset": {
+      "x": 2,
+      "y": 2
+    }
+  },
+
+  "bgColor": {
+    "Default": "#BADA55",
+    "Over": "#AA11FF",
+    "Press": "#BB22FF"
+  },
+
+  "textColor": {
+    "Default": "yellow",
+    "Over": "white"
+  },
+
+  "transition": 2,
+
+  "shape": {
+    "width": 30,
+    "height": 30,
+    "pivot": "CENTER"
+  },
+
+
+  "bgImage": {
+
+    "Default": {
+      "color": "white",
+      "alpha": 0.8,
+      "texture": "_texBtnFullscreen",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 60,
+        "height": 60
+      }
+    },
+
+    "Press": {
+      "color": "red",
+      "alpha": 1.0,
+      "texture": "_texBtnFullscreen",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 60,
+        "height": 60
+      }
+    },
+
+    "Over": {
+      "color": "yellow",
+      "alpha": 1.0,
+      "texture": "_texBtnFullscreen",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 60,
+        "height": 60
+      }
+    }
+
+  },
+
+  "checkedImage": {
+
+    "Default": {
+      "color": "white",
+      "alpha": 0.6,
+      "texture": "_texBtnFullscreen",
+      "rect": {
+        "x": 0,
+        "y": 60,
+        "width": 60,
+        "height": 60
+      }
+    },
+
+    "Press": {
+      "color": "red",
+      "alpha": 1.0,
+      "texture": "_texBtnFullscreen",
+      "rect": {
+        "x": 0,
+        "y": 60,
+        "width": 60,
+        "height": 60
+      }
+    },
+
+    "Over": {
+      "color": "yellow",
+      "alpha": 1.0,
+      "texture": "_texBtnFullscreen",
+      "rect": {
+        "x": 0,
+        "y": 60,
+        "width": 60,
+        "height": 60
+      }
+    }
+  }
+
+}

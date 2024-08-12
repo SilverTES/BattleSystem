@@ -31,7 +31,7 @@ namespace BattleSystem
         public override Node Draw(SpriteBatch batch, GameTime gameTime, int indexLayer)
         {
 
-            if (indexLayer == (int)Layers.FX)
+            if (indexLayer == (int)Layers.BackFX)
             {
                 //GFX.Circle(batch, pos, _size * _alpha, (int)_size, _color * _alpha, 4f);
                 //GFX.FillRectangleCentered(batch, pos, Vector2.One * _size, _color * _alpha, 0);

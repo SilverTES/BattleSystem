@@ -1,0 +1,136 @@
+{
+  "visible": "true",
+  "shadow": {
+    "visible": true,
+    "color" :  "black",
+    "alpha" :  0.6,
+    "offset": {
+      "x": 10,
+      "y": 10
+    }
+  },
+  "font": "_fontMain",
+
+  "bgColor": {
+    "Default": "#BADA55",
+    "Over": "#AA11FF",
+    "Press": "#BB22FF"
+  },
+
+  "textColor": {
+    "Default": "yellow",
+    "Over": "white"
+  },
+
+  "shape": {
+    "width": 240,
+    "height": 60,
+    "pivot": "CENTER"
+  },
+
+  "bgImage": {
+    "Default": {
+      "color": "white",
+      "alpha": 1.0,
+      "texture": "_texBtnBase",
+
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 60
+      }
+    },
+
+    "Over": {
+      "color": "white",
+      "alpha": 1.0,
+      "texture": "_texBtnBase",
+
+      "rect": {
+        "x": 0,
+        "y": 60,
+        "width": 240,
+        "height": 60
+      }
+    },
+
+    "Press": {
+      "color": "white",
+      "alpha": 1.0,
+      "texture": "_texBtnBase",
+
+      "rect": {
+        "x": 0,
+        "y": 120,
+        "width": 240,
+        "height": 60
+      }
+    }
+  },
+
+  "fgImage": {
+    "Over": {
+      "color": "white",
+      "alpha": 0.8,
+      "texture": "_texBtnBase",
+
+      "rect": {
+        "x": 240,
+        "y": 60,
+        "width": 240,
+        "height": 60
+      }
+    },
+
+    "Press": {
+      "color": "white",
+      "alpha": 1,
+      "texture": "_texBtnBase",
+
+      "rect": {
+        "x": 240,
+        "y": 120,
+        "width": 240,
+        "height": 60
+      }
+    }
+  },
+
+  "animateOrder": [
+    "moveUp",
+    "moveDown"
+  ],
+
+  "animateVec2": [
+    {
+      "name": "moveUp",
+      "easing": "Linear",
+      "duration": 20,
+      "from": {
+        "x": 0,
+        "y": 0
+      },
+      "to": {
+        "x": 0,
+        "y": 2
+      },
+      "start": true
+    },
+    {
+      "name": "moveDown",
+      "easing": "Linear",
+      "duration": 20,
+      "from": {
+        "x": 0,
+        "y": 2
+      },
+      "to": {
+        "x": 0,
+        "y": 0
+      },
+      "start": false
+    }
+  ]
+
+}

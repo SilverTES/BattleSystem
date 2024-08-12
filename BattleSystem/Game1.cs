@@ -1,5 +1,6 @@
 ﻿using ImGuiNET;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Mugen.Core;
@@ -7,6 +8,7 @@ using Mugen.Event;
 using Mugen.GFX;
 using Mugen.ImGui;
 using System;
+using System.Net.NetworkInformation;
 
 namespace BattleSystem
 {
@@ -18,15 +20,17 @@ namespace BattleSystem
         Y,
         F1,
         F11,
-        Space,
+        R,
         Count
     }
 
     public enum Layers
     {
+        ImGui,
         Gui,
         Main,
-        FX,
+        FrontFX,
+        BackFX,
         Debug,
         Count
     }
@@ -38,7 +42,13 @@ namespace BattleSystem
         public const int ScreenH = 1080;
 
         public static SpriteFont _fontMain;
-        
+
+        public static MouseCursor _mouseCursor;
+        public static MouseCursor _mouseCursor2;
+
+        public static Texture2D _texMouseCursor;
+        public static Texture2D _texMouseCursor2;
+
         public static Texture2D _texHeart;
         public static Texture2D _texFace;
         public static Texture2D _texAvatar1x1;
@@ -49,10 +59,17 @@ namespace BattleSystem
         public static Texture2D _texCursor;
         public static Texture2D _texTrail;
 
+        public static Texture2D _texBtnBase;
+
         public static Effect _effectBasic;
         public static Effect _effectColor;
 
+        public static SoundEffect _soundClock;
+
+        public static string _hello = "Hello tout le monde";
+
         public Vector2 _mouse;
+        public static MouseState _mouseState;
 
         private ScreenPlay _screenPlay;
 
@@ -70,7 +87,9 @@ namespace BattleSystem
         private ImFontPtr guiFont;
 
         RasterizerState _rasterizerState;
-        bool _isShowGui = false;
+        bool _isShowImGui = false;
+
+        public static float _volumeMaster = .5f;
         #endregion
 
         public Game1()
@@ -92,6 +111,8 @@ namespace BattleSystem
         }
         protected override void Initialize()
         {
+            base.Initialize();
+
             _screenPlay = new ScreenPlay(this);
 
             GFX.Init(GraphicsDevice); // don't forget to initialize when to draw GFX shapes etc
@@ -101,10 +122,8 @@ namespace BattleSystem
 
             _button = new StateEvent((int)ButtonDown.Count);
 
-            base.Initialize();
-
             //Mouse.SetCursor(MouseCursor.FromTexture2D(_texCursor, 10, 2));
-            
+
         }
         protected override void LoadContent()
         {
@@ -122,9 +141,18 @@ namespace BattleSystem
             _texCursor = Content.Load<Texture2D>("Images/mouseCursor");
             _texTrail = Content.Load<Texture2D>("Images/trail");
 
+            _texBtnBase = Content.Load<Texture2D>("Images/Button0");
 
             _effectBasic = Content.Load<Effect>("Effects/effectBasic");
             _effectColor = Content.Load<Effect>("Effects/effectColor");
+
+            _soundClock = Content.Load<SoundEffect>("Sounds/clock");
+
+
+            _texMouseCursor = Content.Load<Texture2D>("Images/mouse_cursor");
+            _texMouseCursor2 = Content.Load<Texture2D>("Images/mouse_cursor2");
+            _mouseCursor = MouseCursor.FromTexture2D(_texMouseCursor, 0, 0);
+            _mouseCursor2 = MouseCursor.FromTexture2D(_texMouseCursor2, 0, 0);
 
         }
 
@@ -132,20 +160,21 @@ namespace BattleSystem
         {
             FrameCounter.Update(gameTime);
 
-            _windowManager.Update(Mouse.GetState().Position.ToVector2());
+            _mouseState = Mouse.GetState();
+            _windowManager.Update(_mouseState.Position.ToVector2());
             _mouse = _windowManager.GetMousePosition();
 
             _button.BeginSetEvents();
             _button.SetEvent((int)ButtonDown.F1, Keyboard.GetState().IsKeyDown(Keys.F1));
             _button.SetEvent((int)ButtonDown.F11, Keyboard.GetState().IsKeyDown(Keys.F11));
-            _button.SetEvent((int)ButtonDown.Space, Keyboard.GetState().IsKeyDown(Keys.Space));
+            _button.SetEvent((int)ButtonDown.R, Keyboard.GetState().IsKeyDown(Keys.R));
 
             if (_button.OnEvent((int)ButtonDown.F1))
             {
-                _isShowGui = !_isShowGui;
+                _isShowImGui = !_isShowImGui;
             }
 
-            if (_button.OnEvent((int)ButtonDown.Space))
+            if (_button.OnEvent((int)ButtonDown.R))
             {
                 Console.WriteLine("Roll");
             }
@@ -166,9 +195,9 @@ namespace BattleSystem
 
         protected override void Draw(GameTime gameTime)
         {
-            if (_isShowGui)
+            if (_isShowImGui)
             {
-                ScreenManager.BeginDraw((int)Layers.Gui);
+                ScreenManager.BeginDraw((int)Layers.ImGui);
 
                 GraphicsDevice.Clear(Color.Transparent);
                 _imGuiRenderer.BeforeLayout(_mouse.X, _mouse.Y, gameTime, Window.ClientBounds.Width, Window.ClientBounds.Height);
@@ -184,6 +213,9 @@ namespace BattleSystem
                 //GFX.Sight(_batch, _mouse.X, _mouse.Y, ScreenW, ScreenH, Color.OrangeRed, 1f);
                 _batch.Draw(GFX._mouseCursor, _mouse, Color.Yellow);
 
+                //Texture2D tex = Field.Get<Game1, Texture2D>("_texBtnBase");
+                //_batch.Draw(tex, Vector2.One * 200, Color.White);
+
                 ScreenManager.EndDraw();
             }
 
@@ -193,8 +225,12 @@ namespace BattleSystem
             ScreenManager.EndDraw();
 
 
-            ScreenManager.BeginDraw((int)Layers.FX, SpriteSortMode.Deferred, BlendState.Additive, SamplerState.LinearWrap);
-            ScreenManager.DrawLayer((int)Layers.FX, gameTime);
+            ScreenManager.BeginDraw((int)Layers.BackFX, SpriteSortMode.Deferred, BlendState.Additive, SamplerState.LinearWrap);
+            ScreenManager.DrawLayer((int)Layers.BackFX, gameTime);
+            ScreenManager.EndDraw();
+            
+            ScreenManager.BeginDraw((int)Layers.FrontFX, SpriteSortMode.Deferred, BlendState.Additive, SamplerState.LinearWrap);
+            ScreenManager.DrawLayer((int)Layers.FrontFX, gameTime);
             ScreenManager.EndDraw();
 
 
@@ -202,14 +238,21 @@ namespace BattleSystem
             ScreenManager.DrawLayer((int)Layers.Debug, gameTime);
             ScreenManager.EndDraw();
 
+            ScreenManager.BeginDraw((int)Layers.Gui, SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap);
+            ScreenManager.DrawLayer((int)Layers.Gui, gameTime);
+            ScreenManager.EndDraw();
+
 
             ScreenManager.BeginShow(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap);
-            ScreenManager.ShowLayer((int)Layers.FX, Color.White);
+            ScreenManager.ShowLayer((int)Layers.BackFX, Color.White);
             ScreenManager.ShowLayer((int)Layers.Main, Color.White);
+            ScreenManager.ShowLayer((int)Layers.Gui, Color.White);
+            ScreenManager.ShowLayer((int)Layers.FrontFX, Color.White);
+
             ScreenManager.ShowLayer((int)Layers.Debug, Color.White);
 
-            if (_isShowGui)
-                ScreenManager.ShowLayer((int)Layers.Gui, Color.White);
+            if (_isShowImGui)
+                ScreenManager.ShowLayer((int)Layers.ImGui, Color.White);
 
             FrameCounter.Draw(_batch, _fontMain, Color.Yellow, 10, 10);
 
