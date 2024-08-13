@@ -163,7 +163,10 @@ namespace BattleSystem
             _mouseCursor = MouseCursor.FromTexture2D(_texMouseCursor, 0, 0);
             _mouseCursor2 = MouseCursor.FromTexture2D(_texMouseCursor2, 0, 0);
         }
-
+        void ToggleShowDebug()
+        {
+            _isShowImGuiDebug = !_isShowImGuiDebug;
+        }
         protected override void Update(GameTime gameTime)
         {
             FrameCounter.Update(gameTime);
@@ -186,7 +189,7 @@ namespace BattleSystem
 
             if (_button.OnEvent((int)ButtonDown.F1))
             {
-                _isShowImGuiDebug = !_isShowImGuiDebug;
+                ToggleShowDebug();
             }
 
             if (_button.OnEvent((int)ButtonDown.R))
@@ -228,6 +231,10 @@ namespace BattleSystem
                 _imGuiRenderer.BeforeLayout(_mouse.X, _mouse.Y, gameTime, Window.ClientBounds.Width, Window.ClientBounds.Height);
                 ImGui.PushFont(guiFont);
                 ImGui.SetNextWindowBgAlpha(1f);
+                
+                if (ImGui.Button("Hide Debug window")) 
+                    ToggleShowDebug();
+
                 ImGui.Text($"Mouse = {_mouse.X}-{_mouse.Y}");
                 ImGui.Text($"Monitor = {GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width}x{GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height}");
                 ImGui.Text($"Window = {Window.ClientBounds.Width}x{Window.ClientBounds.Height}");

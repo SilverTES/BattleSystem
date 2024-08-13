@@ -86,14 +86,10 @@ namespace BattleSystem
 
             _dropZoneManager = new DropZoneManager();
             _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 0, _cellW, _cellH), -10, _droppables));
-            //_dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 1, _cellW, _cellH), -10, _droppables));
-            //_dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 2, _cellW, _cellH), -10, _droppables));
-            //_dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 3, _cellW, _cellH), -10, _droppables));
-            //_dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 4, _cellW, _cellH), -10, _droppables));
 
             _dropZoneInGrid = new DropZone(new Rectangle(0, 0, _cellW, _cellH), -10, _droppables);
-            _dropZoneInGrid.Show(false);
             _dropZoneManager.AddZone(_dropZoneInGrid);
+            _dropZoneInGrid.Show(false);
 
             _layerGui = new Node();
 
@@ -217,31 +213,31 @@ namespace BattleSystem
         {
             return GetCellUnit(mapPosition.X, mapPosition.Y);
         }
-        private void UpdateCells()
-        {
-            for (int i = 0; i < _cellW; i++)
-            {
-                for (int j = 0; j < _cellH; j++)
-                {
-                    var cell = _cells.Get(i, j);
+        //private void UpdateCells()
+        //{
+        //    for (int i = 0; i < _cellW; i++)
+        //    {
+        //        for (int j = 0; j < _cellH; j++)
+        //        {
+        //            var cell = _cells.Get(i, j);
                     
-                    if (cell != null )
-                        cell.Update();
-                }
-            }
-        }
-        private void DrawCells(SpriteBatch batch, int indexLayer)
-        {
-            for (int i = 0; i < _cellW; i++)
-            {
-                for (int j = 0; j < _cellH; j++)
-                {
-                    var cell = _cells.Get(i, j);
-                    if (cell != null)
-                        cell.Draw(batch, AbsXY.ToPoint(), indexLayer);
-                }
-            }
-        }
+        //            if (cell != null )
+        //                cell.Update();
+        //        }
+        //    }
+        //}
+        //private void DrawCells(SpriteBatch batch, int indexLayer)
+        //{
+        //    for (int i = 0; i < _cellW; i++)
+        //    {
+        //        for (int j = 0; j < _cellH; j++)
+        //        {
+        //            var cell = _cells.Get(i, j);
+        //            if (cell != null)
+        //                cell.Draw(batch, AbsXY.ToPoint(), indexLayer);
+        //        }
+        //    }
+        //}
         public override Node Init()
         {
 
@@ -291,23 +287,31 @@ namespace BattleSystem
                     _cursor.Y = _mapCursor.Y * _cellH;
 
 
-
                     // Manage Drag & Drop Zone
-                    if (_isMouseOverGrid && Game1.MouseControl._down)
+                    if (_isMouseOverGrid && Game1.MouseControl._down && CurrentUnitDragged != null)
                     {
-                        if (CurrentUnitDragged != null)
-                            _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(CurrentUnitDragged._rect.Width, CurrentUnitDragged._rect.Height));
-                        else
-                            _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(_cellW, _cellH));
+                        _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(CurrentUnitDragged._rect.Width, CurrentUnitDragged._rect.Height));
 
-                        //if (GetCellUnit(_mapCursor.X, _mapCursor.Y) == null)
+                        //if (CurrentUnitDragged != null)
+                        //    _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(CurrentUnitDragged._rect.Width, CurrentUnitDragged._rect.Height));
+                        //else
+                        //    _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(_cellW, _cellH));
+
                         _dropZoneInGrid.UpdateZone(_rectCursor, -10);
                     }
 
+                    if (!_isMouseOverGrid && !Game1.MouseControl._isActiveDrag && CurrentUnitDragged != null)
+                        _dropZoneInGrid.SetActive(false);
+                    else 
+                        _dropZoneInGrid.SetActive(true);
+
                     CurrentUnitDragged = null;
+
                     SortZAscending();
                     UpdateChildsSort(gameTime);
-                    UpdateCells();
+
+                    
+                    //UpdateCells();
 
                     // reset focus
                     //if (_mouseControl._onClick)
@@ -389,13 +393,9 @@ namespace BattleSystem
                 _dropZoneManager.Draw(batch);
 
                 DrawChilds(batch, gameTime, indexLayer);
-                DrawCells(batch, indexLayer);
+                //DrawCells(batch, indexLayer);
 
                 GFX.LeftTopString(batch, Game1._fontMain, $"{_mouse} -- {_mapCursor} -- {CurrentUnitDragged} {CurrentUnitDragged?._index}", AbsXY + new Vector2(10, -20), Color.AntiqueWhite);
-
-                // Debug Zone when is Drag Unit is possible to drop !!
-                //if (!_isMouseOver) 
-                //    GFX.Rectangle(batch, _rectZone, Color.Red, 4f);
 
                 GFX.LeftTopString(batch, Game1._fontMain, $"{_state} {_isMouseOverGrid}", AbsRectF.BottomLeft + new Vector2(10, 10), Color.AntiqueWhite);
             }
@@ -404,7 +404,7 @@ namespace BattleSystem
             {
 
                 DrawChilds(batch, gameTime, indexLayer);
-                DrawCells(batch, indexLayer);
+                //DrawCells(batch, indexLayer);
 
                 if (Game1.MouseControl._isActiveDrag)
                 {
@@ -444,14 +444,20 @@ namespace BattleSystem
             if (indexLayer == (int)Layers.Debug)
             {
                 DrawChilds(batch, gameTime, indexLayer);
-                ShowValue(batch);
+                ShowDebug(batch);
+
             }
 
             return base.Draw(batch, gameTime, indexLayer);
         }
 
-        private void ShowValue(SpriteBatch batch)
+        private void ShowDebug(SpriteBatch batch)
         {
+
+            // Debug Zone when is Drag Unit is possible to drop !!
+            if (_isMouseOverGrid)
+                GFX.Rectangle(batch, _rectZoneDroppable, Color.Red, 2f);
+
             for (int i = 0; i < _mapW; i++)
             {
                 for (int j = 0; j < _mapH; j++)

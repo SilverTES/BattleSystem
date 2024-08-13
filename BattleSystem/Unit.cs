@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Mugen.AI;
 using Mugen.Animation;
 using Mugen.Core;
 using Mugen.Event;
@@ -16,7 +18,7 @@ namespace BattleSystem
         enum Timer
         {
             Trail,
-            CheckPath,
+            //CheckPath,
             Count
         }
         TimerEvent _timer;
@@ -46,7 +48,8 @@ namespace BattleSystem
         // Dependencies
         protected Arena _arena;
 
-        public List<Point> _path = null;
+        //public List<List<Point>> _paths = new();
+        //protected bool _isCanMove = true;
 
         protected Point _size = new Point();
         public Point Size { get { return _size; } }
@@ -101,8 +104,8 @@ namespace BattleSystem
             _timer.SetTimer((int)Timer.Trail, TimerEvent.Time(0, 0, .001f));
             _timer.StartTimer((int)Timer.Trail);
 
-            _timer.SetTimer((int)Timer.CheckPath, TimerEvent.Time(0, 0, .02f));
-            _timer.StartTimer((int)Timer.CheckPath);
+            //_timer.SetTimer((int)Timer.CheckPath, TimerEvent.Time(0, 0, .02f));
+            //_timer.StartTimer((int)Timer.CheckPath);
 
             _loop = new Addon.Loop(this);
             _loop.SetLoop(0, -Geo.RAD_225 * .005f, Geo.RAD_225 *.005f, .001f, Loops.PINGPONG);
@@ -125,7 +128,7 @@ namespace BattleSystem
         {
             _state = state;
         }
-        public void MoveTo(Point mapPosition, int durationMove = 10)
+        public void MoveTo(Point mapPosition, int durationMove = 6)
         {
             if (!_arena.IsInMap(mapPosition))
                 return;
@@ -195,35 +198,30 @@ namespace BattleSystem
                     break;
                 case State.WAIT:
 
-                    // Keep the cell if is dropped and set draggable
-                    if (_isDropped)
-                    {
-                        _arena.SetCellUnit(_mapPosition.X, _mapPosition.Y, this);
-                        _draggable.SetDraggable(true);
-                    }
-
-
                     if (_navi._isMouseOver && _mouse._onClick && !_mouse._isOverAny && !_mouse._isActiveReSize)
                     {
                         _parent.GotoFront(_index);
                     }
 
+                    // Keep the cell if is dropped and set draggable
+
+                    _draggable.SetDraggable(true);
+
+                    if (_isDropped)
+                    {
+                        _arena.SetCellUnit(_mapPosition.X, _mapPosition.Y, this);
+                    }
+                    else
+                    {
+                        if (!_draggable._isDragged)
+                        {
+                            _draggable._offDragged = true;
+                        }
+                    }
+
                     if (_draggable._isDragged)
                     {
-                        if (_timer.OnTimer((int)Timer.Trail))
-                            new Trail(AbsRectF.Center, _size.ToVector2(), .025f, Color.WhiteSmoke).AppendTo(_parent);
-                        //if (_timer.OnTimer((int)Timer.CheckPath))
-                        //{
-                        //    Point start = new Point(_prevMapX, _prevMapY);
-                        //    Point end = new Point(_mapX, _mapY);
-
-                        //    if (_arena.IsInMap(start) && _arena.IsInMap(end))
-                        //        _path = new Astar2DList<Cell>(_arena.GetMap(), start, end, Find.Diagonal, 1, true)._path;
-                        //}
-
                         Arena.CurrentUnitDragged = this;
-                        
-
                         // test si l'unit dragué est le même unit dans la case , si oui on enlève l'unit de la case
                         var cellOver = _arena.GetCell(_mapPosition.X, _mapPosition.Y);
 
@@ -236,7 +234,6 @@ namespace BattleSystem
                                     _arena.EraseCellUnit(_mapPosition.X, _mapPosition.Y, cellOver._unit);
                                 }
                             }
-
 
 
                         //check if Unit can be dropped
@@ -263,15 +260,88 @@ namespace BattleSystem
                             }
                         }
 
+                        if (_timer.OnTimer((int)Timer.Trail))
+                            new Trail(AbsRectF.Center, _size.ToVector2(), .025f, Color.WhiteSmoke).AppendTo(_parent);
+
+                        //if (_timer.OnTimer((int)Timer.CheckPath))
+                        //{
+                        //    // Reset Paths
+                        //    if (_paths != null)
+                        //    {
+                        //        if (_paths.Count > 0)
+                        //        {
+                        //            for (int i = 0; i < _paths.Count; i++)
+                        //            {
+                        //                if (_paths[i] != null)
+                        //                    if (_paths[i].Count > 0)
+                        //                        _paths[i].Clear();
+                        //            }
+                        //            _paths.Clear();
+                        //        }
+                        //    }
+
+                        //    // AStar Paths
+
+                        //    List<Point> _cells = new(); // all cells compose the unit
+                        //    for (int i = 0; i < _size.X; i++)
+                        //    {
+                        //        for (int j = 0; j < _size.Y; j++)
+                        //        {
+                        //            _cells.Add(new Point(i, j));
+                        //        }
+                        //    }
+
+                        //    for (int pointToSearch = 0; pointToSearch < _cells.Count; pointToSearch++)
+                        //    {
+                        //        _isCanMove = true;
+
+                        //        Point start = _prevMapPosition;
+                        //        Point end = _mapPosition;
+                        //        if (_arena.IsInMap(start) && _arena.IsInMap(end))
+                        //        {
+                        //            _paths.Add(new Astar2DList<Cell>(_arena.GetMap(), start, end, Find.Diagonal, 1, false)._path);
+                        //        }
+
+                        //        for (int i = 0; i < _cells.Count; i++)
+                        //        {
+                        //            int x = _cells[i].X;
+                        //            int y = _cells[i].Y;
+
+                        //            if (x == _cells[pointToSearch].X && y == _cells[pointToSearch].Y) // Path to be copied
+                        //            {
+
+                        //            }
+                        //            else // Copy the first path for all Cell of the unit by size
+                        //            {
+                        //                List<Point> pathCopy = new List<Point>();
+                        //                for (int c = 0; c < _paths[0].Count; c++)
+                        //                {
+                        //                    Point pointCopy = _paths[0][c] + new Point(x,y);
+
+                        //                    if (_arena.GetCellUnit(pointCopy) != null)
+                        //                        _isCanMove = false;
+
+                        //                    pathCopy.Add(pointCopy);
+                        //                }
+                        //                _paths.Add(pathCopy);
+                        //            }
+                        //        }
+
+                        //        if (_isCanMove)
+                        //            break;
+                        //    }
+
+
+                        //}
+
+
                     }
-                    
+
                     _backToPrevPosition = false;
 
                     if (_draggable._offDragged)
                     {
                         //Console.Write("<unit offDrag>");
-                        //if (_path != null)
-                        //    _path.Clear();
 
                         if (_arena._isMouseOverGrid)
                         {
@@ -355,12 +425,8 @@ namespace BattleSystem
 
                         _prevPosition = XY;
                         _prevMapPosition = _mapPosition;
-
-                        //_prevMapX = _mapPosition.X;
-                        //_prevMapY = _mapPosition.Y;
-
-                        //Console.WriteLine($"On Drag : {_prevPosition} : {_prevMapX}x{_prevMapY}");
                     }
+
 
                     break;
                 case State.MOVE:
@@ -431,7 +497,7 @@ namespace BattleSystem
         {
             if (indexLayer == (int)Layers.Main)
             {
-                //GFX.FillRectangle(batch, AbsRectF.Extend(-4), Color.Black * .8f);
+                GFX.FillRectangle(batch, AbsRectF.Extend(-4), Color.Black * .8f);
 
                 if (_draggable._isDragged)
                 {
@@ -452,6 +518,7 @@ namespace BattleSystem
                 //    GFX.Rectangle(batch, AbsRect, Color.Red * .5f, 2f);
                 //batch.Draw(Game1._texAvatar1x1, AbsXY, Color.Yellow);
 
+                GFX.Point(batch, AbsRectF.TopLeft + Vector2.One * 20, 12, Color.Red *.5f);
                 GFX.CenterBorderedStringXY(batch, Game1._fontMain, $"{_stats._energy}", AbsRectF.TopLeft + Vector2.One * 20, Color.GreenYellow, Color.Green);
                 GFX.CenterBorderedStringXY(batch, Game1._fontMain, $"{_stats._mana}", AbsRectF.TopRight - Vector2.UnitX * 20 + Vector2.UnitY * 20, Color.MediumSlateBlue, Color.DarkBlue);
                 GFX.CenterBorderedStringXY(batch, Game1._fontMain, $"{_stats._powerAttack}", AbsRectF.BottomLeft + Vector2.UnitX * 20 - Vector2.UnitY * 20, Color.Yellow, Color.Red);
@@ -461,19 +528,27 @@ namespace BattleSystem
             {
                 GFX.CenterStringXY(batch, Game1._fontMain, $"{_mapPosition}\n{_isDropped}\n{_state}", AbsRectF.BottomCenter, Color.Yellow);
 
-                //if (_path != null)
-                //    if (_path.Count > 0)
+                //if (_paths != null && _draggable._isDragged)
+                //    if (_paths.Count > 0)
                 //    {
-                //        for (int i = 1; i < _path.Count; i++)
-                //        {
-                //            Vector2 p1 = _path[i - 1].ToVector2() * GetCellSize() + GetCellSize() / 2;
-                //            Vector2 p2 = _path[i].ToVector2() * GetCellSize() + GetCellSize() / 2;
+                //        for (int path = 0; path< _paths.Count; path++) 
+                //        { 
+                //            for (int i = 1; i < _paths[path].Count; i++)
+                //            {
+                //                Vector2 p1 = _paths[path][i - 1].ToVector2() * GetCellSize() + GetCellSize() / 2;
+                //                Vector2 p2 = _paths[path][i].ToVector2() * GetCellSize() + GetCellSize() / 2;
 
-                //            if (i == 1)
-                //                GFX.Point(batch, p1 + _arena.AbsXY, 8f, Color.White);
+                //                Color color = Color.LawnGreen;
 
-                //            GFX.Line(batch, p1 + _arena.AbsXY, p2 + _arena.AbsXY, Color.White * .25f, 4f);
-                //            GFX.Point(batch, p2 + _arena.AbsXY, 10f, Color.White * 1f);
+                //                if (!_isCanMove)
+                //                    color = Color.Red;
+                                
+                //                if (i == 1)
+                //                    GFX.Point(batch, p1 + _arena.AbsXY, 8f, color);
+
+                //                GFX.Line(batch, p1 + _arena.AbsXY, p2 + _arena.AbsXY, color * .25f, 4f);
+                //                GFX.Point(batch, p2 + _arena.AbsXY, 10f, color * 1f);
+                //            }
                 //        }
                 //    }
 

@@ -21,6 +21,8 @@ namespace BattleSystem
 
         int[] _droppablesType; // Nodes droppables in the zone
 
+        bool _isActive = true;
+
         public DropZone(Rectangle rect, float nearZoneSize, int[] droppables) 
         { 
             _rect = rect;
@@ -32,6 +34,10 @@ namespace BattleSystem
         { 
             _isShow = isShow;
         }
+        public void SetActive(bool isActive)
+        {
+            _isActive = isActive;
+        }
         public void UpdateZone(RectangleF rect, float nearZoneSize) 
         {
             _rect = rect;
@@ -41,6 +47,9 @@ namespace BattleSystem
         public void Update(GameTime gameTime, List<Node> nodeToCheck)
         {
             _isNearNode = false;
+
+            if (!_isActive)
+                return;
 
             foreach (var item in nodeToCheck)
             {
@@ -94,11 +103,15 @@ namespace BattleSystem
         {
             if (_isShow)
             {
-                GFX.Rectangle(batch, _rect, Color.Violet * .75f * alpha, 4f);
-                GFX.Rectangle(batch, _rectNear, Color.Violet * .25f * alpha, 2f);
+                Color color = Color.Violet;
+
+                if (!_isActive) color = Color.Black;
+
+                GFX.Rectangle(batch, _rect, color * .75f * alpha, 4f);
+                GFX.Rectangle(batch, _rectNear, color * .25f * alpha, 2f);
 
                 if (_isNearNode)
-                    GFX.Rectangle(batch, _rectNear, Color.Violet * .5f * alpha, 2f);
+                    GFX.Rectangle(batch, _rectNear, color * .5f * alpha, 2f);
 
                 if (_containedNode != null)
                 {

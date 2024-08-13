@@ -15,7 +15,7 @@ namespace BattleSystem
         public const int CellH = 128;
 
         public const int ArenaW = 12;
-        public const int ArenaH = 7;
+        public const int ArenaH = 6;
 
         Game1 _game;
         
