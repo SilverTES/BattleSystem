@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -107,8 +108,10 @@ namespace BattleSystem
             //_timer.SetTimer((int)Timer.CheckPath, TimerEvent.Time(0, 0, .02f));
             //_timer.StartTimer((int)Timer.CheckPath);
 
+            float angleDelta = .005f;
+
             _loop = new Addon.Loop(this);
-            _loop.SetLoop(0, -Geo.RAD_225 * .005f, Geo.RAD_225 *.005f, .001f, Loops.PINGPONG);
+            _loop.SetLoop(0, -Geo.RAD_225 * angleDelta, Geo.RAD_225 * angleDelta, .001f, Loops.PINGPONG);
             _loop.Start();
             AddAddon(_loop);
 
@@ -128,17 +131,19 @@ namespace BattleSystem
         {
             _state = state;
         }
-        public void MoveTo(Point mapPosition, int durationMove = 6)
+        public void MoveToStep(Point mapStep, int durationMove = 6)
         {
-            if (!_arena.IsInMap(mapPosition))
+            if (!_arena.IsUnitInMap(this, mapStep))
                 return;
+
+            Point mapDestPositon = _mapPosition + mapStep;
 
             // Test if move is possible by unit size
             for (int i = 0; i < _size.X; i++)
             {
                 for (int j = 0; j < _size.Y; j++)
                 {
-                    var unit = _arena.GetCellUnit(mapPosition + new Point(i, j));
+                    var unit = _arena.GetCellUnit(mapDestPositon + new Point(i, j));
                     if (unit != null)
                     {
                         if (unit._index != _index)
@@ -149,12 +154,12 @@ namespace BattleSystem
 
             _from = XY;
 
-            _to.X = mapPosition.X * _cellW;
-            _to.Y = mapPosition.Y * _cellH;
+            _to.X = mapDestPositon.X * _cellW;
+            _to.Y = mapDestPositon.Y * _cellH;
 
             _ticMove = 0;
             _tempoMove = durationMove;
-            
+
             SetState(State.MOVE);
         }
         public void MoveTo(Vector2 goal, int durationMove = 6)
@@ -189,8 +194,8 @@ namespace BattleSystem
             UpdateRect();
             _timer.Update();
 
-            _mapPosition.X = (int)((_x+_cellW/2)/_cellW);
-            _mapPosition.Y = (int)((_y+_cellH/2)/_cellH);
+            _mapPosition.X = (int)Math.Floor((_x+_cellW/2)/_cellW);
+            _mapPosition.Y = (int)Math.Floor((_y+_cellH/2)/_cellH);
 
             switch (_state)
             {
@@ -506,19 +511,19 @@ namespace BattleSystem
 
                 Texture2D tex = Game1._texAvatar1x1;
 
-                if (_size.X == 2 && _size.Y == 2)
-                    tex = Game1._texAvatar2x2;
+                if (_size.X == 2 && _size.Y == 2) tex = Game1._texAvatar2x2;
+                if (_size.X == 2 && _size.Y == 3) tex = Game1._texAvatar2x3;
 
                 //batch.Draw(tex, AbsXY, Color.White);
 
-                GFX.Draw(batch, tex, Color.White, _loop._current, AbsXY + tex.Bounds.Size.ToVector2()/2, Position.CENTER, Vector2.One);
+                GFX.Draw(batch, tex, Color.White * (_arena.IsUnitInMap(this, Point.Zero)?1f:.25f), _loop._current, AbsXY + tex.Bounds.Size.ToVector2()/2, Position.CENTER, Vector2.One);
 
 
                 //if (_isDroppable)
                 //    GFX.Rectangle(batch, AbsRect, Color.Red * .5f, 2f);
                 //batch.Draw(Game1._texAvatar1x1, AbsXY, Color.Yellow);
 
-                GFX.Point(batch, AbsRectF.TopLeft + Vector2.One * 20, 12, Color.Red *.5f);
+                //GFX.Point(batch, AbsRectF.TopLeft + Vector2.One * 20, 12, Color.Red *.5f);
                 GFX.CenterBorderedStringXY(batch, Game1._fontMain, $"{_stats._energy}", AbsRectF.TopLeft + Vector2.One * 20, Color.GreenYellow, Color.Green);
                 GFX.CenterBorderedStringXY(batch, Game1._fontMain, $"{_stats._mana}", AbsRectF.TopRight - Vector2.UnitX * 20 + Vector2.UnitY * 20, Color.MediumSlateBlue, Color.DarkBlue);
                 GFX.CenterBorderedStringXY(batch, Game1._fontMain, $"{_stats._powerAttack}", AbsRectF.BottomLeft + Vector2.UnitX * 20 - Vector2.UnitY * 20, Color.Yellow, Color.Red);

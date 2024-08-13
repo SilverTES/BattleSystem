@@ -1,6 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 using Mugen.Core;
 using Mugen.GFX;
 using Newtonsoft.Json.Linq;
@@ -15,7 +14,7 @@ namespace BattleSystem
         public const int CellH = 128;
 
         public const int ArenaW = 12;
-        public const int ArenaH = 6;
+        public const int ArenaH = 8;
 
         Game1 _game;
         
@@ -38,7 +37,7 @@ namespace BattleSystem
             AddAddon(_loop);
 
             _arena = new Arena(ArenaW, ArenaH, CellW, CellH);
-            _arena.SetPosition(320, 60);
+            _arena.SetPosition(320, 20);
             _arena.AppendTo(this);
 
             _layerGui = new Node();
@@ -55,6 +54,7 @@ namespace BattleSystem
             InitChilds();
 
             _arena.AddUnit(9, 1, 2, 2);
+            _arena.AddUnit(5, 2, 2, 3);
 
             for (int i = 0; i < 8; i++)
             {
@@ -71,7 +71,7 @@ namespace BattleSystem
         public override Node Update(GameTime gameTime)
         {
 
-            if (_btnQuit._navi._onPress)
+            if (_btnQuit._navi._onClick)
                 Game1.Quit();
 
             //_game.IsMouseVisible = !_mouseControl._isActiveDrag; // hide mouse when drag !

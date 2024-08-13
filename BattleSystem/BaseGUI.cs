@@ -186,6 +186,7 @@ namespace BattleSystem.Gui
             _navi._onMouseOut = false;
             _navi._onPress = false;
             _navi._onRelease = false;
+            _navi._onClick = false;
 
             _navi._isMouseOver = Collision2D.PointInRect(new Vector2(_mouseControl._x, _mouseControl._y), _rect);
 
@@ -204,6 +205,11 @@ namespace BattleSystem.Gui
                 _navi._isPress = false;
                 _navi._isRelease = false;
                 SetState(State.Default);
+            }
+
+            if (_navi._isMouseOver && _mouseControl._onClick)
+            {
+                _navi._onClick = true;
             }
 
             if (_navi._isMouseOver && Game1._mouseState.LeftButton == ButtonState.Released && _navi._isPress)
