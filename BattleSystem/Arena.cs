@@ -35,12 +35,10 @@ namespace BattleSystem
 
         public Point MapSize { get; private set; }
 
-        Node _layerGui;
-        Gui.Button _btnAction;
-
         Point _mapCursor = new();
         Vector2 _cursor = new();
         RectangleF _rectCursor;
+        RectangleF _prevRectCursor;
 
         int _cellW;
         int _cellH;
@@ -92,13 +90,6 @@ namespace BattleSystem
             _dropZoneManager.AddZone(_dropZoneInGrid);
             _dropZoneInGrid.Show(false);
 
-            _layerGui = new Node();
-
-            var style = (JObject)JsonConvert.DeserializeObject(File.ReadAllText("Content/Misc/styleBtn.json"));
-
-            _btnAction = (Gui.Button)new Gui.Button(Game1.MouseControl, "Action", style)
-                .SetPosition(Game1.ScreenW/2, Game1.ScreenH - 40)
-                .AppendTo(_layerGui);
         }
         public void InitAllCells()
         {
@@ -167,6 +158,24 @@ namespace BattleSystem
                 }
             }
 
+        }
+        public void ClearAllCellUnit()
+        {
+            for (int i = 0; i < _cellW; i++)
+            {
+                for (int j = 0; j < _cellH; j++)
+                {
+                    var cell = _cells.Get(i, j);
+
+                    if (cell != null)
+                        cell._unit = null;
+                }
+            }
+        }
+        public void ClearArena()
+        {
+            KillAll(new int[] { UID.Get<Unit>() });
+            ClearAllCellUnit();
         }
         public void EraseCellUnit(int mapX, int mapY, Unit unit)
         {
@@ -251,7 +260,6 @@ namespace BattleSystem
                 }
             }
         }
-
         public void MoveAllUnitLeft(int duration = 32)
         {
             for (int i = 0; i < _mapW; i++)
@@ -308,7 +316,6 @@ namespace BattleSystem
         public override Node Update(GameTime gameTime)
         {
             UpdateRect();
-            _layerGui.UpdateChilds(gameTime);
 
             _listItems = GroupOf(new int[] { UID.Get<Unit>() });
             _dropZoneManager.Update(gameTime, _listItems);
@@ -352,10 +359,16 @@ namespace BattleSystem
                     // Manage Drag & Drop Zone
                     if (_isMouseOverGrid && Game1.MouseControl._down)
                     {
+
                         if (CurrentUnitDragged != null)
                             _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(CurrentUnitDragged._rect.Width, CurrentUnitDragged._rect.Height));
                         else
                             _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(_cellW, _cellH));
+                                                
+                        //if (_prevRectCursor != _rectCursor)
+                        //    Game1._soundClock.Play(0.5f, 1f, .5f);
+
+                        _prevRectCursor = _rectCursor;
 
                         _dropZoneInGrid.UpdateZone(_rectCursor, -10);
                     }
@@ -383,12 +396,7 @@ namespace BattleSystem
                     //    }
                     //}
 
-                    if (_btnAction._navi._onClick)
-                    {
-                        Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, .5f);
-                        //Console.WriteLine("btnAction Pressed !");
 
-                    }
 
                     break;
                 case State.Phase_Enemy:
@@ -435,24 +443,24 @@ namespace BattleSystem
 
                 _dropZoneManager.Draw(batch);
 
+                // Draw rectCursor if unit over in zone grid
                 if (Game1.MouseControl._isActiveDrag)
                 {
-                    RectangleF rectCursorExtend = ((RectangleF)_rectCursor).Extend(_loop._current);
-
-                    Color color = Color.LawnGreen;
-
                     if (CurrentUnitDragged != null)
                     {
+                        RectangleF rectCursorExtend = ((RectangleF)_rectCursor).Extend(_loop._current);
+                        Color color = Color.LawnGreen;
+
                         if (!CurrentUnitDragged.IsPossibleToDrop)
                         {
                             color = Color.OrangeRed;
                         }
-                    }
 
-                    if (_isMouseOverGrid)
-                    {
-                        GFX.FillRectangle(batch, rectCursorExtend, color * .25f);
-                        GFX.Rectangle(batch, rectCursorExtend, color * .25f, 8f);
+                        if (IsUnitInMap(CurrentUnitDragged, Point.Zero))
+                        {
+                            GFX.FillRectangle(batch, rectCursorExtend, color * .25f);
+                            GFX.Rectangle(batch, rectCursorExtend, color * .25f, 8f);
+                        }
                     }
 
                 }
@@ -475,13 +483,12 @@ namespace BattleSystem
 
             if (indexLayer == (int)Layers.Gui)
             {
-                _layerGui.DrawChilds(batch, gameTime, indexLayer);
+                DrawChilds(batch, gameTime, indexLayer);
             }
 
             if (indexLayer == (int)Layers.FrontFX)
             {
                 DrawChilds(batch, gameTime, indexLayer);
-                _layerGui.DrawChilds(batch, gameTime, indexLayer);
             }
 
             if (indexLayer == (int)Layers.Debug)

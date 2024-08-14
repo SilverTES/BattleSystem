@@ -43,7 +43,7 @@ namespace BattleSystem.Gui
         {
             Default,
             Over,
-            Press,
+            IsPress,
             Count
         }
 
@@ -240,7 +240,7 @@ namespace BattleSystem.Gui
                 _navi._isPress = true;
                 _navi._isRelease = false;
 
-                SetState(State.Press);
+                SetState(State.IsPress);
             }
 
             var animates = _animateVec2.GetAll();
@@ -289,10 +289,10 @@ namespace BattleSystem.Gui
 
             if (_navi._isPress)
             {
-                image = images[(int)State.Press];
+                image = images[(int)State.IsPress];
 
                 if (image == null)
-                    GFX.FillRectangle(batch, AbsRect, _bgColors[(int)State.Press]);
+                    GFX.FillRectangle(batch, AbsRect, _bgColors[(int)State.IsPress]);
             }
 
             if (image._texture != null)
@@ -334,7 +334,7 @@ namespace BattleSystem.Gui
 
                 if (_navi._isPress)
                 {
-                    fgImage = _fgImages[(int)State.Press];
+                    fgImage = _fgImages[(int)State.IsPress];
                 }
 
                 if (fgImage != null)

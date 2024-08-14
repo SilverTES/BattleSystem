@@ -55,7 +55,7 @@
       }
     },
 
-    "Press": {
+    "IsPress": {
       "color": "white",
       "alpha": 1.0,
       "texture": "_texBtnBase",
@@ -83,7 +83,7 @@
       }
     },
 
-    "Press": {
+    "IsPress": {
       "color": "white",
       "alpha": 1,
       "texture": "_texBtnBase",

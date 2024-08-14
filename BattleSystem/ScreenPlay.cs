@@ -5,6 +5,7 @@ using Mugen.GFX;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.IO;
+using System;
 
 namespace BattleSystem
 {
@@ -22,6 +23,7 @@ namespace BattleSystem
         Arena _arena;
 
         Gui.Button _btnQuit;
+        Gui.Button _btnAction;
 
         Node _layerGui;
         public ScreenPlay(Game1 game) 
@@ -48,9 +50,15 @@ namespace BattleSystem
                 .SetPosition(160, Game1.ScreenH - 40)
                 .AppendTo(_layerGui);
 
+            _btnAction = (Gui.Button)new Gui.Button(Game1.MouseControl, "Action", style)
+                .SetPosition(Game1.ScreenW / 2, Game1.ScreenH - 40)
+                .AppendTo(_layerGui);
+
         }
         public override Node Init()
         {
+            _arena.ClearArena();
+
             InitChilds();
 
             _arena.AddUnit(9, 1, 2, 2);
@@ -73,6 +81,13 @@ namespace BattleSystem
 
             if (_btnQuit._navi._onClick)
                 Game1.Quit();
+
+            if (_btnAction._navi._onClick)
+            {
+                //Console.WriteLine("ScreenPlay.Init");
+                Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, .5f);
+                Init();
+            }
 
             //_game.IsMouseVisible = !_mouseControl._isActiveDrag; // hide mouse when drag !
 

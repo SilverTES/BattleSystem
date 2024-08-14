@@ -131,10 +131,10 @@ namespace BattleSystem
         {
             _state = state;
         }
-        public void MoveToStep(Point mapStep, int durationMove = 6)
+        public bool MoveToStep(Point mapStep, int durationMove = 6) // true if move possible
         {
             if (!_arena.IsUnitInMap(this, mapStep))
-                return;
+                return false;
 
             Point mapDestPosition = _mapPosition + mapStep;
 
@@ -147,7 +147,7 @@ namespace BattleSystem
                     if (unit != null)
                     {
                         if (unit._index != _index)
-                        return;
+                        return false;
                     }
                 }
             }
@@ -164,6 +164,8 @@ namespace BattleSystem
             _tempoMove = durationMove;
 
             SetState(State.MOVE);
+
+            return true;
         }
         public void MoveTo(Vector2 goal, int durationMove = 6)
         {
@@ -519,7 +521,7 @@ namespace BattleSystem
 
                 //batch.Draw(tex, AbsXY, Color.White);
 
-                GFX.Draw(batch, tex, Color.White * (_arena.IsUnitInMap(this, Point.Zero)?1f:.25f), _loop._current, AbsXY + tex.Bounds.Size.ToVector2()/2, Position.CENTER, Vector2.One);
+                GFX.Draw(batch, tex, Color.White * (_arena.IsUnitInMap(this, Point.Zero)?1f:.75f), _loop._current, AbsXY + tex.Bounds.Size.ToVector2()/2, Position.CENTER, Vector2.One);
 
 
                 //if (_isDroppable)
