@@ -102,15 +102,17 @@ namespace BattleSystem
                 }
             }
         }
-        public void AddUnit(int mapX, int mapY, int sizeW, int sizeH)
+        public bool AddUnit(int mapX, int mapY, int sizeW, int sizeH)
         {
             if (GetCellUnit(mapX, mapY) != null)
-                return;
+                return false;
 
             var unit = new Unit(Game1.MouseControl, this, sizeW, sizeH, _cellW, _cellH);
             unit.SetMapPosition(mapX, mapY).AppendTo(this);
 
             SetCellUnit(mapX, mapY, unit);
+
+            return true;
         }
         public List<List<Cell>> GetMap()
         {

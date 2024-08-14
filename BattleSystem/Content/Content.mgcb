@@ -188,9 +188,57 @@
 /processorParam:TextureFormat=Color
 /build:Images/trail.png
 
+#begin Sounds/blockhit.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/blockhit.wav
+
+#begin Sounds/bomb.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/bomb.wav
+
+#begin Sounds/bubble1.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/bubble1.wav
+
 #begin Sounds/clock.wav
 /importer:WavImporter
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/clock.wav
+
+#begin Sounds/coins_purchase_4.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/coins_purchase_4.wav
+
+#begin Sounds/mouseover.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/mouseover.wav
+
+#begin Sounds/okay.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/okay.wav
+
+#begin Sounds/pop.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/pop.wav
+
+#begin Sounds/wood_hit.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/wood_hit.wav
 

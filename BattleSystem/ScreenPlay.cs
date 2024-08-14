@@ -21,8 +21,9 @@ namespace BattleSystem
         
         Addon.Loop _loop;
         Arena _arena;
+        //ChainGrid _chainGrid;
 
-        Gui.Button _btnQuit;
+        Gui.Button _btnRoll;
         Gui.Button _btnAction;
 
         Node _layerGui;
@@ -42,16 +43,20 @@ namespace BattleSystem
             _arena.SetPosition(320, 20);
             _arena.AppendTo(this);
 
+            //_chainGrid = new ChainGrid(new Point(3, 3), new Point(80,80));
+            //_chainGrid.SetPosition(40, Game1.ScreenH - 480).AppendTo(this);
+
+
             _layerGui = new Node();
 
             var style = (JObject)JsonConvert.DeserializeObject(File.ReadAllText("Content/Misc/styleBtn.json"));
 
-            _btnQuit = (Gui.Button)new Gui.Button(Game1.MouseControl, "Quit", style)
-                .SetPosition(160, Game1.ScreenH - 40)
+            _btnRoll = (Gui.Button)new Gui.Button(Game1.MouseControl, "Roll", style)
+                .SetPosition(160, Game1.ScreenH - 120)
                 .AppendTo(_layerGui);
 
             _btnAction = (Gui.Button)new Gui.Button(Game1.MouseControl, "Action", style)
-                .SetPosition(Game1.ScreenW / 2, Game1.ScreenH - 40)
+                .SetPosition(160, Game1.ScreenH - 40)
                 .AppendTo(_layerGui);
 
         }
@@ -66,11 +71,15 @@ namespace BattleSystem
 
             for (int i = 0; i < 8; i++)
             {
+                int x, y;
 
-                int x = Misc.Rng.Next(0, ArenaW);
-                int y = Misc.Rng.Next(0, ArenaH);
+                do
+                {
+                    x = Misc.Rng.Next(0, ArenaW);
+                    y = Misc.Rng.Next(0, ArenaH);
 
-                _arena.AddUnit(x, y, 1, 1);
+                } while (!_arena.AddUnit(x, y, 1, 1));
+
 
             }
 
@@ -79,8 +88,13 @@ namespace BattleSystem
         public override Node Update(GameTime gameTime)
         {
 
-            if (_btnQuit._navi._onClick)
-                Game1.Quit();
+            if (_btnRoll._navi._onClick)
+            {
+                Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, .5f);
+
+                //_chainGrid.Init();
+                //Game1.Quit();
+            }
 
             if (_btnAction._navi._onClick)
             {
@@ -102,59 +116,64 @@ namespace BattleSystem
         {
             batch.GraphicsDevice.Clear(Color.Transparent);
 
-            if (indexLayer == (int)Layers.Main)
+            switch (indexLayer)
             {
-                batch.Draw(Game1._texBackground, new Vector2(0,_loop._current), Color.White * .5f);
+                case (int)Layers.Main:
+
+                    batch.Draw(Game1._texBackground, new Vector2(0,_loop._current), Color.White * .5f);
                 
-                //GFX.Grid(batch, 0, 0, Game1.ScreenW, Game1.ScreenH, CellW, CellH, Color.Gray * .25f, 3);
-                //GFX.Grid(batch, 0, 0, Game1.ScreenW, Game1.ScreenH, CellW, CellH, Color.Black * .5f, 1);
+                    //GFX.Grid(batch, 0, 0, Game1.ScreenW, Game1.ScreenH, CellW, CellH, Color.Gray * .25f, 3);
+                    //GFX.Grid(batch, 0, 0, Game1.ScreenW, Game1.ScreenH, CellW, CellH, Color.Black * .5f, 1);
 
-                //_arena.Draw(batch, gameTime);
+                    //_arena.Draw(batch, gameTime);
 
-                //Draw.Sight(batch, _game._mouseX, _game._mouseY, Game1.ScreenW, Game1.ScreenH, Color.OrangeRed * .5f, 1f);
-                //GFX.Circle(batch, _game._mouse.X, _game._mouse.Y, 8, 16, Color.Yellow * .5f, 3f);
+                    //Draw.Sight(batch, _game._mouseX, _game._mouseY, Game1.ScreenW, Game1.ScreenH, Color.OrangeRed * .5f, 1f);
+                    //GFX.Circle(batch, _game._mouse.X, _game._mouse.Y, 8, 16, Color.Yellow * .5f, 3f);
 
-                //batch.DrawString(_game._fontMain, $"Mouse = {_mouse.X}-{_mouse.Y}", new Vector2(4, 2), Color.Yellow);
-                //batch.DrawString(_game._fontMain, $"GamePad = {GamePad.GetState(PlayerIndex.One).ThumbSticks.Left}:{GamePad.GetState(PlayerIndex.One).ThumbSticks.Right}", new Vector2(4, 64), Color.Gold);
+                    //batch.DrawString(_game._fontMain, $"Mouse = {_mouse.X}-{_mouse.Y}", new Vector2(4, 2), Color.Yellow);
+                    //batch.DrawString(_game._fontMain, $"GamePad = {GamePad.GetState(PlayerIndex.One).ThumbSticks.Left}:{GamePad.GetState(PlayerIndex.One).ThumbSticks.Right}", new Vector2(4, 64), Color.Gold);
 
-                //GFX.RectangleEx(batch, new Vector2(340, 200), new RectangleF(80, 60), new Vector2(-40,-30), Color.Green, Geo.RAD_45, 2, true);
+                    //GFX.RectangleEx(batch, new Vector2(340, 200), new RectangleF(80, 60), new Vector2(-40,-30), Color.Green, Geo.RAD_45, 2, true);
 
-                DrawChilds(batch, gameTime, indexLayer);
-                GFX.LeftTopBorderedString(batch, Game1._fontMain, $"{_arena.NbActive()} - {_arena.NbNode()}", 10, 30, Color.White, Color.Red);
+                    DrawChilds(batch, gameTime, indexLayer);
+                    GFX.LeftTopBorderedString(batch, Game1._fontMain, $"{_arena.NbActive()} - {_arena.NbNode()}", 10, 30, Color.White, Color.Red);
 
 
-                //batch.Draw(Game1._texBtnBase, Vector2.One * 20, Color.White);
+                    //batch.Draw(Game1._texBtnBase, Vector2.One * 20, Color.White);
+                    break;
 
+                case (int)Layers.Gui:
+
+                    DrawChilds(batch, gameTime, indexLayer);
+                    _layerGui.DrawChilds(batch, gameTime, indexLayer);
+                    break;
+
+                case (int)Layers.FrontFX:
+
+                    DrawChilds(batch, gameTime, indexLayer);
+                    _layerGui.DrawChilds(batch, gameTime, indexLayer);
+
+                    //GFX.Sight(batch, _mouse, Game1.ScreenW, Game1.ScreenH, Color.Red * .5f, 3f);
+                    //GFX.Sight(batch, _mouse, Game1.ScreenW, Game1.ScreenH, Color.Yellow, 1f);
+                    break;
+
+                case (int)Layers.BackFX:
+
+                    DrawChilds(batch, gameTime, indexLayer);
+
+                    //GFX.Sight(batch, _mouse, Game1.ScreenW, Game1.ScreenH, Color.Red * .5f, 3f);
+                    //GFX.Sight(batch, _mouse, Game1.ScreenW, Game1.ScreenH, Color.Yellow, 1f);
+                    break;
+
+                case (int)Layers.Debug:
+
+                    DrawChilds(batch, gameTime, indexLayer);
+                    break;
+
+                default:
+                    break;
             }
 
-            if (indexLayer == (int)Layers.Gui)
-            {
-                DrawChilds(batch, gameTime, indexLayer);
-                _layerGui.DrawChilds(batch, gameTime, indexLayer);
-
-            }
-
-            if (indexLayer == (int)Layers.FrontFX)
-            {
-                DrawChilds(batch, gameTime, indexLayer);
-                _layerGui.DrawChilds(batch, gameTime, indexLayer);
-
-                //GFX.Sight(batch, _mouse, Game1.ScreenW, Game1.ScreenH, Color.Red * .5f, 3f);
-                //GFX.Sight(batch, _mouse, Game1.ScreenW, Game1.ScreenH, Color.Yellow, 1f);
-            }
-
-            if (indexLayer == (int)Layers.BackFX)
-            {
-                DrawChilds(batch, gameTime, indexLayer);
-
-                //GFX.Sight(batch, _mouse, Game1.ScreenW, Game1.ScreenH, Color.Red * .5f, 3f);
-                //GFX.Sight(batch, _mouse, Game1.ScreenW, Game1.ScreenH, Color.Yellow, 1f);
-            }
-
-            if (indexLayer == (int)Layers.Debug)
-            {
-                DrawChilds(batch, gameTime, indexLayer);
-            }
 
             return base.Draw(batch, gameTime, indexLayer);
         }

@@ -480,7 +480,7 @@ namespace BattleSystem
                         }
 
                         if (playSound)
-                            Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, .5f);
+                            Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, 0f);
 
                         SetState(State.WAIT);
                     }

@@ -73,6 +73,11 @@ namespace BattleSystem
         public static Effect _effectColor;
 
         public static SoundEffect _soundClock;
+        public static SoundEffect _soundBlockHit;
+        public static SoundEffect _soundBubble;
+        public static SoundEffect _soundMouseOver;
+        public static SoundEffect _soundPop;
+        public static SoundEffect _soundWoodHit;
 
         public static string _hello = "Hello tout le monde";
 
@@ -158,9 +163,13 @@ namespace BattleSystem
             _effectColor = Content.Load<Effect>("Effects/effectColor");
 
             _soundClock = Content.Load<SoundEffect>("Sounds/clock");
+            _soundBlockHit = Content.Load<SoundEffect>("Sounds/blockhit");
+            _soundBubble = Content.Load<SoundEffect>("Sounds/bubble1");
+            _soundMouseOver = Content.Load<SoundEffect>("Sounds/mouseover");
+            _soundPop = Content.Load<SoundEffect>("Sounds/pop");
+            _soundWoodHit = Content.Load<SoundEffect>("Sounds/wood_hit");
 
-
-            _texMouseCursor = Content.Load<Texture2D>("Images/mouse_cursor");
+        _texMouseCursor = Content.Load<Texture2D>("Images/mouse_cursor");
             _texMouseCursor2 = Content.Load<Texture2D>("Images/mouse_cursor2");
             _mouseCursor = MouseCursor.FromTexture2D(_texMouseCursor, 0, 0);
             _mouseCursor2 = MouseCursor.FromTexture2D(_texMouseCursor2, 0, 0);
