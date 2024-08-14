@@ -136,14 +136,14 @@ namespace BattleSystem
             if (!_arena.IsUnitInMap(this, mapStep))
                 return;
 
-            Point mapDestPositon = _mapPosition + mapStep;
+            Point mapDestPosition = _mapPosition + mapStep;
 
             // Test if move is possible by unit size
             for (int i = 0; i < _size.X; i++)
             {
                 for (int j = 0; j < _size.Y; j++)
                 {
-                    var unit = _arena.GetCellUnit(mapDestPositon + new Point(i, j));
+                    var unit = _arena.GetCellUnit(mapDestPosition + new Point(i, j));
                     if (unit != null)
                     {
                         if (unit._index != _index)
@@ -152,10 +152,13 @@ namespace BattleSystem
                 }
             }
 
+            _arena.EraseCellUnit(this);
+            _arena.SetCellUnit(mapDestPosition.X, mapDestPosition.Y, this);
+
             _from = XY;
 
-            _to.X = mapDestPositon.X * _cellW;
-            _to.Y = mapDestPositon.Y * _cellH;
+            _to.X = mapDestPosition.X * _cellW;
+            _to.Y = mapDestPosition.Y * _cellH;
 
             _ticMove = 0;
             _tempoMove = durationMove;
@@ -453,7 +456,7 @@ namespace BattleSystem
                         _mapPosition.X = (int)((_x + _cellW / 2) / _cellW);
                         _mapPosition.Y = (int)((_y + _cellH / 2) / _cellH);
 
-                        _arena.SetCellUnit(_mapPosition.X, _mapPosition.Y, this);
+                        //_arena.SetCellUnit(_mapPosition.X, _mapPosition.Y, this);
 
                         bool playSound = false;
 
