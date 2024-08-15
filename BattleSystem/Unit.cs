@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using Mugen.AI;
 using Mugen.Animation;
 using Mugen.Core;
@@ -32,7 +33,7 @@ namespace BattleSystem
             DAMAGE,
             LAST
         }
-
+        public bool Is(State state) { return _state == state; }
         // Statistic of the Unit
         protected State _state = State.WAIT;
         protected Stats _stats;
@@ -81,6 +82,7 @@ namespace BattleSystem
         public bool IsPossibleToDrop { get { return _isPossibleToDrop; } }
 
         Addon.Loop _loop;
+        Shake _shake;
 
         public Unit(MouseControl mouse, Arena arena, int sizeW, int sizeH, int cellW, int cellH) 
         {
@@ -115,6 +117,8 @@ namespace BattleSystem
             _loop.Start();
             AddAddon(_loop);
 
+            _shake = new();
+
             _stats = new Stats();
         }
 
@@ -133,7 +137,7 @@ namespace BattleSystem
         }
         public bool MoveToStep(Point mapStep, int durationMove = 6) // true if move possible
         {
-            if (!_arena.IsUnitInMap(this, mapStep))
+            if (!_arena.IsUnitInMap(this, mapStep) || _state == State.MOVE)
                 return false;
 
             Point mapDestPosition = _mapPosition + mapStep;
@@ -194,13 +198,44 @@ namespace BattleSystem
             _y = _mapPosition.Y * _cellH;
         }
 
+        public void AttackUnit(int damage, float intensity = 10f)
+        {
+            _shake.SetIntensity(intensity, .25f);
+            _stats.SetDamage(damage);
+
+            new PopInfo("-" + damage, Color.Yellow, Color.Red, 0, 24, 24)
+                .SetPosition(_rect.Center)
+                .AppendTo(_parent);
+
+            SetState(State.DAMAGE);
+            Game1._soundWoodHit.Play(.25f, 1f, 0f);
+        }
+        public void DestroyMe()
+        {
+            _arena.EraseCellUnit(_mapPosition.X, _mapPosition.Y, this);
+            Game1._soundBlockHit.Play(.5f, 1f, 0f);
+            KillMe();
+        }
         public override Node Update(GameTime gameTime)
         {
-            UpdateRect();
+            _stats.Update(gameTime);
             _timer.Update();
+            UpdateRect();
 
             _mapPosition.X = (int)Math.Floor((_x+_cellW/2)/_cellW);
             _mapPosition.Y = (int)Math.Floor((_y+_cellH/2)/_cellH);
+
+            if (_stats._energy <= 0)
+            {
+                DestroyMe();
+            }
+                
+
+            if (_navi._isMouseOver && _mouse._onClick && !_mouse._isOverAny && !_mouse._isActiveReSize)
+            {
+                _parent.GotoFront(_index);
+            }
+
 
             switch (_state)
             {
@@ -208,11 +243,12 @@ namespace BattleSystem
                     break;
                 case State.WAIT:
 
-                    if (_navi._isMouseOver && _mouse._onClick && !_mouse._isOverAny && !_mouse._isActiveReSize)
-                    {
-                        _parent.GotoFront(_index);
-                    }
 
+                    // Debug test SetDammage ! 
+                    if (_navi._isMouseOver && ButtonControl.OnePress("DebugAttackUnit", Mouse.GetState().RightButton == ButtonState.Pressed))
+                    {
+                        AttackUnit(10);
+                    }
                     // Keep the cell if is dropped and set draggable
 
                     _draggable.SetDraggable(true);
@@ -494,6 +530,10 @@ namespace BattleSystem
                 case State.ATTACK:
                     break;
                 case State.DAMAGE:
+
+                    if (!_shake.IsShake)
+                        SetState(State.WAIT);
+
                     break;
                 case State.LAST:
                     break;
@@ -511,7 +551,8 @@ namespace BattleSystem
 
                 if (_draggable._isDragged)
                 {
-                    GFX.Rectangle(batch, AbsRectF.Extend(2), Color.Orange * .5f, 2f);
+                    //GFX.Rectangle(batch, AbsRectF.Extend(2), Color.Orange * .5f, 2f);
+                    GFX.BevelledRectangle(batch, AbsRectF.Extend(2), Vector2.One * 10, Color.Orange * .5f, 4f);
                 }
 
                 Texture2D tex = Game1._texAvatar1x1;
@@ -521,7 +562,11 @@ namespace BattleSystem
 
                 //batch.Draw(tex, AbsXY, Color.White);
 
-                GFX.Draw(batch, tex, Color.White * (_arena.IsUnitInMap(this, Point.Zero)?1f:.75f), _loop._current, AbsXY + tex.Bounds.Size.ToVector2()/2, Position.CENTER, Vector2.One);
+                Color color = Color.White;
+
+                if (Is(State.DAMAGE)) color = Color.IndianRed * .5f;
+
+                GFX.Draw(batch, tex, color * (_arena.IsUnitInMap(this, Point.Zero)?1f:.75f), _loop._current, AbsXY + (tex.Bounds.Size.ToVector2()/2) + _shake.GetVector2(), Position.CENTER, Vector2.One);
 
 
                 //if (_isDroppable)
@@ -529,9 +574,9 @@ namespace BattleSystem
                 //batch.Draw(Game1._texAvatar1x1, AbsXY, Color.Yellow);
 
                 //GFX.Point(batch, AbsRectF.TopLeft + Vector2.One * 20, 12, Color.Red *.5f);
-                GFX.CenterBorderedStringXY(batch, Game1._fontMain, $"{_stats._energy}", AbsRectF.TopLeft + Vector2.One * 20, Color.GreenYellow, Color.Green);
-                GFX.CenterBorderedStringXY(batch, Game1._fontMain, $"{_stats._mana}", AbsRectF.TopRight - Vector2.UnitX * 20 + Vector2.UnitY * 20, Color.MediumSlateBlue, Color.DarkBlue);
-                GFX.CenterBorderedStringXY(batch, Game1._fontMain, $"{_stats._powerAttack}", AbsRectF.BottomLeft + Vector2.UnitX * 20 - Vector2.UnitY * 20, Color.Yellow, Color.Red);
+                GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_stats._energy}", AbsRectF.TopLeft + Vector2.One * 20 + _shake.GetVector2()*.5f, Color.GreenYellow, Color.Green);
+                GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_stats._mana}", AbsRectF.TopRight - Vector2.UnitX * 20 + Vector2.UnitY * 20, Color.MediumSlateBlue, Color.DarkBlue);
+                GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_stats._powerAttack}", AbsRectF.BottomLeft + Vector2.UnitX * 20 - Vector2.UnitY * 20, Color.Yellow, Color.Red);
             }
 
             if (indexLayer == (int)Layers.Debug)
@@ -578,6 +623,15 @@ namespace BattleSystem
                 }
 
 
+            }
+
+            if (indexLayer == (int)Layers.FrontFX)
+            {
+                if (Is(State.DAMAGE))
+                {
+                    //GFX.Rectangle(batch, AbsRectF.Extend(2), Color.Orange * .5f, 2f);
+                    GFX.BevelledRectangle(batch, AbsRectF.Extend(2) + _shake.GetVector2(), Vector2.One * 10, Color.PaleVioletRed *.75f, 4f);
+                }
             }
 
             return base.Draw(batch, gameTime, indexLayer);

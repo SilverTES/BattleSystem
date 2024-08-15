@@ -48,6 +48,8 @@ namespace BattleSystem
         public const int ScreenH = 1080;
 
         public static SpriteFont _fontMain;
+        public static SpriteFont _fontMain2;
+        public static SpriteFont _fontMain3;
 
         public static MouseCursor _mouseCursor;
         public static MouseCursor _mouseCursor2;
@@ -143,10 +145,13 @@ namespace BattleSystem
         protected override void LoadContent()
         {
 
-            guiFont = ImGui.GetIO().Fonts.AddFontFromFileTTF("Content\\Fonts\\homespun.ttf", 20);
+            guiFont = ImGui.GetIO().Fonts.AddFontFromFileTTF("Content\\Fonts\\SuiSenerisRg.otf", 20);
             _imGuiRenderer.RebuildFontAtlas();
 
             _fontMain = Content.Load<SpriteFont>("Fonts/fontMain");
+            _fontMain2 = Content.Load<SpriteFont>("Fonts/fontMain2");
+            _fontMain3 = Content.Load<SpriteFont>("Fonts/fontMain3");
+
             _texHeart = Content.Load<Texture2D>("Images/Heart");
             _texFace = Content.Load<Texture2D>("Images/avatar00");
             _texBackground = Content.Load<Texture2D>("Images/background00");
@@ -198,7 +203,8 @@ namespace BattleSystem
             _button.SetEvent((int)ButtonDown.F11, Keyboard.GetState().IsKeyDown(Keys.F11));
             _button.SetEvent((int)ButtonDown.R, Keyboard.GetState().IsKeyDown(Keys.R));
 
-            if (_button.OnEvent((int)ButtonDown.F1))
+            // show debug toggle
+            if (_button.OnEvent((int)ButtonDown.F1) || (MouseControl._onClick && (_mouse.X == 0 || _mouse.Y == 0)))
             {
                 ToggleShowDebug();
             }

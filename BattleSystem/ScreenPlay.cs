@@ -2,10 +2,10 @@
 using Microsoft.Xna.Framework.Graphics;
 using Mugen.Core;
 using Mugen.GFX;
+using Mugen.Physics;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.IO;
-using System;
 
 namespace BattleSystem
 {
@@ -27,6 +27,7 @@ namespace BattleSystem
         Gui.Button _btnAction;
 
         Node _layerGui;
+
         public ScreenPlay(Game1 game) 
         { 
             _game = game;
@@ -51,11 +52,11 @@ namespace BattleSystem
 
             var style = (JObject)JsonConvert.DeserializeObject(File.ReadAllText("Content/Misc/styleBtn.json"));
 
-            _btnRoll = (Gui.Button)new Gui.Button(Game1.MouseControl, "Roll", style)
+            _btnRoll = (Gui.Button)new Gui.Button(Game1.MouseControl, "ROLL", style)
                 .SetPosition(160, Game1.ScreenH - 120)
                 .AppendTo(_layerGui);
 
-            _btnAction = (Gui.Button)new Gui.Button(Game1.MouseControl, "Action", style)
+            _btnAction = (Gui.Button)new Gui.Button(Game1.MouseControl, "ACTION", style)
                 .SetPosition(160, Game1.ScreenH - 40)
                 .AppendTo(_layerGui);
 
@@ -136,10 +137,14 @@ namespace BattleSystem
                     //GFX.RectangleEx(batch, new Vector2(340, 200), new RectangleF(80, 60), new Vector2(-40,-30), Color.Green, Geo.RAD_45, 2, true);
 
                     DrawChilds(batch, gameTime, indexLayer);
-                    GFX.LeftTopBorderedString(batch, Game1._fontMain, $"{_arena.NbActive()} - {_arena.NbNode()}", 10, 30, Color.White, Color.Red);
+
 
 
                     //batch.Draw(Game1._texBtnBase, Vector2.One * 20, Color.White);
+                    //GFX.RoundedRectangle(batch, new RectangleF(400, 300, 240, 180), 32, 32, Color.White, 5f);
+                    //GFX.BevelledRectangle(batch, new RectangleF(800, 200, 180, 160), new Vector2(20, 20), Color.OrangeRed, 5f);
+
+
                     break;
 
                 case (int)Layers.Gui:
@@ -168,6 +173,8 @@ namespace BattleSystem
                 case (int)Layers.Debug:
 
                     DrawChilds(batch, gameTime, indexLayer);
+
+                    GFX.LeftTopBorderedString(batch, Game1._fontMain2, $"{_arena.NbActive()}/{_arena.NbNode()}", 10, 30, Color.White, Color.Red);
                     break;
 
                 default:

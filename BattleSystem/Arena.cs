@@ -84,7 +84,7 @@ namespace BattleSystem
 
 
             _dropZoneManager = new DropZoneManager();
-            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 0, _cellW, _cellH), -10, _droppables));
+            //_dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 0, _cellW, _cellH), -10, _droppables));
 
             _dropZoneInGrid = new DropZone(new Rectangle(0, 0, _cellW, _cellH), -10, _droppables);
             _dropZoneManager.AddZone(_dropZoneInGrid);
@@ -417,10 +417,10 @@ namespace BattleSystem
 
 
             #region DEBUG
-            if (Button.OnePress("MoveLeft", Keyboard.GetState().IsKeyDown(Keys.Left)))   MoveAllUnitLeft();    
-            if (Button.OnePress("MoveRight", Keyboard.GetState().IsKeyDown(Keys.Right))) MoveAllUnitRight();
-            if (Button.OnePress("MoveUp", Keyboard.GetState().IsKeyDown(Keys.Up)))       MoveAllUnitUp();    
-            if (Button.OnePress("MoveDown", Keyboard.GetState().IsKeyDown(Keys.Down)))   MoveAllUnitDown();
+            if (ButtonControl.OnePress("MoveLeft", Keyboard.GetState().IsKeyDown(Keys.Left)))   MoveAllUnitLeft(16);    
+            if (ButtonControl.OnePress("MoveRight", Keyboard.GetState().IsKeyDown(Keys.Right))) MoveAllUnitRight(16);
+            if (ButtonControl.OnePress("MoveUp", Keyboard.GetState().IsKeyDown(Keys.Up)))       MoveAllUnitUp(16);    
+            if (ButtonControl.OnePress("MoveDown", Keyboard.GetState().IsKeyDown(Keys.Down)))   MoveAllUnitDown(16);
             #endregion
 
             return base.Update(gameTime);
@@ -441,7 +441,8 @@ namespace BattleSystem
                 GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Gray * .25f, 3);
                 GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Black * .75f, 1);
 
-                GFX.Rectangle(batch, AbsRect, Color.WhiteSmoke * .5f);
+                //GFX.BevelledRectangle(batch, AbsRect, Vector2.One * 4, Color.WhiteSmoke * .5f, 2f);
+                GFX.Rectangle(batch, AbsRect, Color.WhiteSmoke * .5f, 2f);
 
                 _dropZoneManager.Draw(batch);
 
@@ -461,7 +462,8 @@ namespace BattleSystem
                         if (IsUnitInMap(CurrentUnitDragged, Point.Zero))
                         {
                             GFX.FillRectangle(batch, rectCursorExtend, color * .25f);
-                            GFX.Rectangle(batch, rectCursorExtend, color * .25f, 8f);
+                            //GFX.Rectangle(batch, rectCursorExtend, color * .25f, 8f);
+                            GFX.BevelledRectangle(batch, rectCursorExtend, Vector2.One * 10, color * .25f, 4f);
                         }
                     }
 
@@ -470,9 +472,7 @@ namespace BattleSystem
                 DrawChilds(batch, gameTime, indexLayer);
                 //DrawCells(batch, indexLayer);
 
-                GFX.LeftTopString(batch, Game1._fontMain, $"{_mouse} -- {_mapCursor} -- {CurrentUnitDragged} {CurrentUnitDragged?._index}", AbsXY + new Vector2(10, -20), Color.AntiqueWhite);
 
-                GFX.LeftTopString(batch, Game1._fontMain, $"{_state} {_isMouseOverGrid}", AbsRectF.BottomLeft + new Vector2(10, 10), Color.AntiqueWhite);
             }
 
             if (indexLayer == (int)Layers.BackFX)
@@ -498,6 +498,9 @@ namespace BattleSystem
                 DrawChilds(batch, gameTime, indexLayer);
                 ShowDebug(batch);
 
+                GFX.LeftTopString(batch, Game1._fontMain, $"{_mouse} -- {_mapCursor} -- {CurrentUnitDragged} {CurrentUnitDragged?._index}", AbsXY + new Vector2(10, -20), Color.AntiqueWhite);
+
+                GFX.LeftTopString(batch, Game1._fontMain, $"{_state} {_isMouseOverGrid}", AbsRectF.BottomLeft + new Vector2(10, 10), Color.AntiqueWhite);
             }
 
             return base.Draw(batch, gameTime, indexLayer);
