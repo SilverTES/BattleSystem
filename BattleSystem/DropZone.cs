@@ -61,9 +61,9 @@ namespace BattleSystem
                     {
                         if (item._type == _droppablesType[i])
                         {
-                            if (item._type == UID.Get<Unit>())
+                            if (item._type == UID.Get<Card>())
                             {
-                                var unit = item.This<Unit>();
+                                var unit = item.This<Card>();
                                 
                                 if (!unit._isDropped)
                                 {
@@ -139,8 +139,8 @@ namespace BattleSystem
         {
             foreach (var item in nodeToCheck)
             {
-                if (item._type == UID.Get<Unit>())
-                item.This<Unit>()._isDroppable = false;
+                if (item._type == UID.Get<Card>())
+                item.This<Card>()._isDroppable = false;
             }
 
             for (int i = 0; i < _zones.Count; i++)

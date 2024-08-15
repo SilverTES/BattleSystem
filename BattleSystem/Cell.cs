@@ -12,7 +12,7 @@ namespace BattleSystem
 
         Arena _arena;
 
-        public Unit _unit;
+        public Card _card;
         public bool _isFree = true;
         public int _id = 0;
         float _alpha = 0f;

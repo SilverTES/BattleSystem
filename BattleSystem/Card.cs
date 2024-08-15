@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Mugen.AI;
 using Mugen.Animation;
 using Mugen.Core;
 using Mugen.Event;
@@ -15,15 +13,16 @@ using Mugen.Physics;
 
 namespace BattleSystem
 {
-    public class Unit : Node
+    public class Card : Node
     {
-        enum Timer
+        protected enum Timer
         {
             Trail,
+            Death,
             //CheckPath,
             Count
         }
-        TimerEvent _timer;
+        protected TimerEvent _timer;
         public enum State
         {
             NONE = -1,
@@ -31,6 +30,7 @@ namespace BattleSystem
             MOVE,
             ATTACK,
             DAMAGE,
+            DEAD,
             LAST
         }
         public bool Is(State state) { return _state == state; }
@@ -53,7 +53,7 @@ namespace BattleSystem
         //public List<List<Point>> _paths = new();
         //protected bool _isCanMove = true;
 
-        protected Point _size = new Point();
+        protected Point _size = new Point(1, 1);
         public Point Size { get { return _size; } }
         protected Point _mapPosition = new();
         public Point MapPosition { get { return _mapPosition; } }
@@ -81,18 +81,17 @@ namespace BattleSystem
         protected bool _isPossibleToDrop = false;
         public bool IsPossibleToDrop { get { return _isPossibleToDrop; } }
 
-        Addon.Loop _loop;
-        Shake _shake;
+        protected Addon.Loop _loop;
+        protected Shake _shake;
 
-        public Unit(MouseControl mouse, Arena arena, int sizeW, int sizeH, int cellW, int cellH) 
+        public Card(Arena arena) 
         {
-            _type = UID.Get<Unit>();
-            _mouse = mouse;
+            _type = UID.Get<Card>();
             _arena = arena;
-            _size.X = sizeW;
-            _size.Y = sizeH;
-            _cellW = cellW;
-            _cellH = cellH;
+            _cellW = _arena.CellSize.X;
+            _cellH = _arena.CellSize.Y;
+
+            _mouse = _arena._mouseControl;
 
             SetSize(_size.X * _cellW, _size.Y * _cellH);
 
@@ -107,6 +106,7 @@ namespace BattleSystem
             _timer.SetTimer((int)Timer.Trail, TimerEvent.Time(0, 0, .001f));
             _timer.StartTimer((int)Timer.Trail);
 
+            _timer.SetTimer((int)Timer.Death, TimerEvent.Time(0, 0, 1.5f));
             //_timer.SetTimer((int)Timer.CheckPath, TimerEvent.Time(0, 0, .02f));
             //_timer.StartTimer((int)Timer.CheckPath);
 
@@ -137,7 +137,7 @@ namespace BattleSystem
         }
         public bool MoveToStep(Point mapStep, int durationMove = 6) // true if move possible
         {
-            if (!_arena.IsUnitInMap(this, mapStep) || _state == State.MOVE)
+            if (!_arena.IsCardInMap(this, mapStep) || _state == State.MOVE)
                 return false;
 
             Point mapDestPosition = _mapPosition + mapStep;
@@ -147,7 +147,7 @@ namespace BattleSystem
             {
                 for (int j = 0; j < _size.Y; j++)
                 {
-                    var unit = _arena.GetCellUnit(mapDestPosition + new Point(i, j));
+                    var unit = _arena.GetCellCard(mapDestPosition + new Point(i, j));
                     if (unit != null)
                     {
                         if (unit._index != _index)
@@ -156,8 +156,8 @@ namespace BattleSystem
                 }
             }
 
-            _arena.EraseCellUnit(this);
-            _arena.SetCellUnit(mapDestPosition.X, mapDestPosition.Y, this);
+            _arena.EraseCellCard(this);
+            _arena.SetCellCard(mapDestPosition.X, mapDestPosition.Y, this);
 
             _from = XY;
 
@@ -182,7 +182,7 @@ namespace BattleSystem
             SetState(State.MOVE);
         }
 
-        public Unit SetMapPosition(int mapX, int mapY)
+        public Card SetMapPosition(int mapX, int mapY)
         {
             _mapPosition.X = mapX;
             _mapPosition.Y = mapY;
@@ -191,14 +191,22 @@ namespace BattleSystem
 
             return this;
         }
+        public Card SetCardSize(int sizeW, int sizeH) 
+        {
+            _size.X = sizeW;
+            _size.Y = sizeH;
 
+            SetSize(_size.X * _cellW, _size.Y * _cellH);
+
+            return this;        
+        }
         public void UpdatePosition()
         {
             _x = _mapPosition.X * _cellW;
             _y = _mapPosition.Y * _cellH;
         }
 
-        public void AttackUnit(int damage, float intensity = 10f)
+        public void AttackCard(int damage, float intensity = 10f)
         {
             _shake.SetIntensity(intensity, .25f);
             _stats.SetDamage(damage);
@@ -212,7 +220,7 @@ namespace BattleSystem
         }
         public void DestroyMe()
         {
-            _arena.EraseCellUnit(_mapPosition.X, _mapPosition.Y, this);
+            _arena.EraseCellCard(_mapPosition.X, _mapPosition.Y, this);
             Game1._soundBlockHit.Play(.5f, 1f, 0f);
             KillMe();
         }
@@ -224,12 +232,6 @@ namespace BattleSystem
 
             _mapPosition.X = (int)Math.Floor((_x+_cellW/2)/_cellW);
             _mapPosition.Y = (int)Math.Floor((_y+_cellH/2)/_cellH);
-
-            if (_stats._energy <= 0)
-            {
-                DestroyMe();
-            }
-                
 
             if (_navi._isMouseOver && _mouse._onClick && !_mouse._isOverAny && !_mouse._isActiveReSize)
             {
@@ -243,11 +245,16 @@ namespace BattleSystem
                     break;
                 case State.WAIT:
 
+                    if (_stats._energy <= 0)
+                    {
+                        SetState(State.DEAD);
+                        _timer.StartTimer((int)Timer.Death);
+                    }
 
                     // Debug test SetDammage ! 
-                    if (_navi._isMouseOver && ButtonControl.OnePress("DebugAttackUnit", Mouse.GetState().RightButton == ButtonState.Pressed))
+                    if (_navi._isMouseOver && ButtonControl.OnePress("DebugAttackUnit", Mouse.GetState().RightButton == ButtonState.Pressed && Keyboard.GetState().IsKeyDown(Keys.Space)))
                     {
-                        AttackUnit(10);
+                        AttackCard(40);
                     }
                     // Keep the cell if is dropped and set draggable
 
@@ -255,7 +262,7 @@ namespace BattleSystem
 
                     if (_isDropped)
                     {
-                        _arena.SetCellUnit(_mapPosition.X, _mapPosition.Y, this);
+                        _arena.SetCellCard(_mapPosition.X, _mapPosition.Y, this);
                     }
                     else
                     {
@@ -267,17 +274,17 @@ namespace BattleSystem
 
                     if (_draggable._isDragged)
                     {
-                        Arena.CurrentUnitDragged = this;
+                        Arena.CurrentCardDragged = this;
                         // test si l'unit dragué est le même unit dans la case , si oui on enlève l'unit de la case
                         var cellOver = _arena.GetCell(_mapPosition.X, _mapPosition.Y);
 
                         // Test si l'unité est sur ces traces, si oui il efface
                         if (cellOver != null)
-                            if (cellOver._unit != null)
+                            if (cellOver._card != null)
                             {
-                                if (Arena.CurrentUnitDragged._index == cellOver._unit._index)
+                                if (Arena.CurrentCardDragged._index == cellOver._card._index)
                                 {
-                                    _arena.EraseCellUnit(_mapPosition.X, _mapPosition.Y, cellOver._unit);
+                                    _arena.EraseCellCard(_mapPosition.X, _mapPosition.Y, cellOver._card);
                                 }
                             }
 
@@ -298,7 +305,7 @@ namespace BattleSystem
 
                                 if (cellOver != null)
                                 {
-                                    if (cellOver._unit != null)
+                                    if (cellOver._card != null)
                                     {
                                         _isPossibleToDrop = false;
                                     }
@@ -395,7 +402,7 @@ namespace BattleSystem
 
                             _isPossibleToDrop = true;
 
-                             // If unit is out of arena isPossibleToDrop is false!
+                            // If unit is out of arena isPossibleToDrop is false!
                             if (!_arena._isMouseOverGrid)
                                 _isPossibleToDrop = false;
 
@@ -414,7 +421,7 @@ namespace BattleSystem
 
                                     if (cellOver != null)
                                     {
-                                        if (cellOver._unit != null)
+                                        if (cellOver._card != null)
                                         {
                                             //Console.WriteLine("Trouve un cell occupé déjà");
                                             _isPossibleToDrop = false;
@@ -426,7 +433,7 @@ namespace BattleSystem
 
                             if (_isPossibleToDrop) // Unit move to goal when isPossibleToDrop is true
                             {
-                                if (_isDroppable && cellOver._unit == null )
+                                if (_isDroppable && cellOver._card == null)
                                 {
                                     MoveTo(_dropZone._rect.TopLeft - _parent.XY);
                                     //SetState(State.MOVE);
@@ -524,7 +531,7 @@ namespace BattleSystem
                     {
                         // Efface les traces de l'unit dans l'Arena quand elle bouge toute seule
                         if (!_isDroppable || !_draggable._isDragged)
-                            _arena.EraseCellUnit(_mapPosition.X, _mapPosition.Y, this);
+                            _arena.EraseCellCard(_mapPosition.X, _mapPosition.Y, this);
                     }
                     break;
                 case State.ATTACK:
@@ -535,8 +542,20 @@ namespace BattleSystem
                         SetState(State.WAIT);
 
                     break;
+                
                 case State.LAST:
                     break;
+                
+                case State.DEAD:
+                    
+                    if (_timer.OnTimer((int)Timer.Death))
+                    {
+                        //Console.WriteLine("Le est venu !!");
+                        DestroyMe();
+                    }
+                    
+                    break;
+
                 default:
                     break;
             }
@@ -566,7 +585,9 @@ namespace BattleSystem
 
                 if (Is(State.DAMAGE)) color = Color.IndianRed * .5f;
 
-                GFX.Draw(batch, tex, color * (_arena.IsUnitInMap(this, Point.Zero)?1f:.75f), _loop._current, AbsXY + (tex.Bounds.Size.ToVector2()/2) + _shake.GetVector2(), Position.CENTER, Vector2.One);
+                if (Is(State.DEAD)) color = Color.Red;
+
+                GFX.Draw(batch, tex, color * (_arena.IsCardInMap(this, Point.Zero)?1f:.75f), _loop._current, AbsXY + (tex.Bounds.Size.ToVector2()/2) + _shake.GetVector2(), Position.CENTER, Vector2.One);
 
 
                 //if (_isDroppable)
@@ -574,14 +595,18 @@ namespace BattleSystem
                 //batch.Draw(Game1._texAvatar1x1, AbsXY, Color.Yellow);
 
                 //GFX.Point(batch, AbsRectF.TopLeft + Vector2.One * 20, 12, Color.Red *.5f);
-                GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_stats._energy}", AbsRectF.TopLeft + Vector2.One * 20 + _shake.GetVector2()*.5f, Color.GreenYellow, Color.Green);
+                if (_stats._energy > 20)
+                    GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_stats._energy}", AbsRectF.TopLeft + Vector2.One * 20 + _shake.GetVector2()*.5f, Color.GreenYellow, Color.Green);
+                else
+                    GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_stats._energy}", AbsRectF.TopLeft + Vector2.One * 20 + _shake.GetVector2() * .5f, Color.MonoGameOrange, Color.Red);
+
                 GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_stats._mana}", AbsRectF.TopRight - Vector2.UnitX * 20 + Vector2.UnitY * 20, Color.MediumSlateBlue, Color.DarkBlue);
                 GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_stats._powerAttack}", AbsRectF.BottomLeft + Vector2.UnitX * 20 - Vector2.UnitY * 20, Color.Yellow, Color.Red);
             }
 
             if (indexLayer == (int)Layers.Debug)
             {
-                GFX.CenterStringXY(batch, Game1._fontMain, $"{_mapPosition}\n{_isDropped}\n{_state}", AbsRectF.BottomCenter, Color.Yellow);
+                GFX.CenterStringXY(batch, Game1._fontMain, $"{_mapPosition}\n{_isDropped}\n{_state}\n{_type}\n{_subType}", AbsRectF.BottomCenter, Color.Yellow);
 
                 //if (_paths != null && _draggable._isDragged)
                 //    if (_paths.Count > 0)

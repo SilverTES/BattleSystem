@@ -6,6 +6,9 @@ using Mugen.Physics;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.IO;
+using Microsoft.Xna.Framework.Input;
+using System;
+using Mugen.Input;
 
 namespace BattleSystem
 {
@@ -40,7 +43,7 @@ namespace BattleSystem
 
             AddAddon(_loop);
 
-            _arena = new Arena(ArenaW, ArenaH, CellW, CellH);
+            _arena = new Arena(Game1.MouseControl, ArenaW, ArenaH, CellW, CellH);
             _arena.SetPosition(320, 20);
             _arena.AppendTo(this);
 
@@ -67,8 +70,8 @@ namespace BattleSystem
 
             InitChilds();
 
-            _arena.AddUnit(9, 1, 2, 2);
-            _arena.AddUnit(5, 2, 2, 3);
+            _arena.AddCard(9, 1, 2, 2);
+            _arena.AddCard(5, 2, 2, 3);
 
             for (int i = 0; i < 8; i++)
             {
@@ -79,7 +82,8 @@ namespace BattleSystem
                     x = Misc.Rng.Next(0, ArenaW);
                     y = Misc.Rng.Next(0, ArenaH);
 
-                } while (!_arena.AddUnit(x, y, 1, 1));
+                //} while (!_arena.AddCard(x, y, 1, 1));
+                } while (!_arena.AddCard(x, y, new Unit1x1(_arena)));
 
 
             }
@@ -102,6 +106,16 @@ namespace BattleSystem
                 //Console.WriteLine("ScreenPlay.Init");
                 Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, .5f);
                 Init();
+            }
+
+            if (ButtonControl.OnePress("AddCard",Mouse.GetState().RightButton == ButtonState.Pressed && Keyboard.GetState().IsKeyDown(Keys.LeftControl)))
+            {
+                //if (_arena.AddCard(_arena.MapCursor.X, _arena.MapCursor.Y, new Unit1x1(_arena)))
+                if (_arena.AddCard(_arena.MapCursor.X, _arena.MapCursor.Y, new Unit1x1(_arena)))
+                    Console.WriteLine("Add Card ok");
+                else
+                    Console.WriteLine("Add Card Error : no place here");
+
             }
 
             //_game.IsMouseVisible = !_mouseControl._isActiveDrag; // hide mouse when drag !

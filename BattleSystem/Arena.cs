@@ -5,11 +5,9 @@ using Mugen.Core;
 using Mugen.GFX;
 using Mugen.Input;
 using Mugen.Physics;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
 using System.Collections.Generic;
-using System.IO;
 using System;
+using static Mugen.Physics.Collide;
 
 
 namespace BattleSystem
@@ -26,8 +24,8 @@ namespace BattleSystem
 
         State _state = State.Phase_Player;
 
-        public static Unit CurrentUnitDragged;
-
+        public static Card CurrentCardDragged;
+        public MouseControl _mouseControl { get; private set; }
         int _mapW;
         int _mapH;
 
@@ -36,6 +34,7 @@ namespace BattleSystem
         public Point MapSize { get; private set; }
 
         Point _mapCursor = new();
+        public Point MapCursor => _mapCursor;
         Vector2 _cursor = new();
         RectangleF _rectCursor;
         RectangleF _prevRectCursor;
@@ -45,7 +44,7 @@ namespace BattleSystem
 
         public Point CellSize { get; private set; }
 
-        List2D<Cell> _cells;
+        List2D<Cell> _grid;
 
         Vector2 _mouse;
         public bool _isMouseOverGrid = false;
@@ -55,15 +54,16 @@ namespace BattleSystem
         DropZoneManager _dropZoneManager;
         DropZone _dropZoneInGrid;
         
-        List<Node> _listItems;
+        List<Node> _listCards;
         
-        public Arena(int mapW, int mapH, int cellW = 32, int cellH = 32) 
+        public Arena(MouseControl mouseControl, int mapW, int mapH, int cellW = 32, int cellH = 32) 
         { 
-             _mapW = mapW;
+            _mouseControl = mouseControl;
+            _mapW = mapW;
             _mapH = mapH;
             MapSize = new Point(mapW, mapH);
 
-            _cells = new List2D<Cell>(mapW, mapH);
+            _grid = new List2D<Cell>(mapW, mapH);
 
             _rectZoneDroppable = new RectangleF(_rect.X, _rect.Y, _rect.Width, _rect.Height);
 
@@ -80,7 +80,7 @@ namespace BattleSystem
             _loop.Start();
             AddAddon(_loop);
 
-            int[] _droppables = new int[] { UID.Get<Unit>() };
+            int[] _droppables = new int[] { UID.Get<Card>() };
 
 
             _dropZoneManager = new DropZoneManager();
@@ -98,25 +98,37 @@ namespace BattleSystem
                 for (int j = 0; j < _cellH; j++)
                 {
                     var cell = new Cell(this, new Point(i, j), new Point(_cellW, _cellH));
-                    _cells.Put(i, j, cell);
+                    _grid.Put(i, j, cell);
                 }
             }
         }
-        public bool AddUnit(int mapX, int mapY, int sizeW, int sizeH)
+        public bool AddCard(int mapX, int mapY, int sizeW, int sizeH)
         {
-            if (GetCellUnit(mapX, mapY) != null)
+            if (IsDetectCardInRect(mapX, mapY, sizeW, sizeH))
                 return false;
 
-            var unit = new Unit(Game1.MouseControl, this, sizeW, sizeH, _cellW, _cellH);
-            unit.SetMapPosition(mapX, mapY).AppendTo(this);
+            var card = new Card(this);
+            card.SetCardSize(sizeW, sizeH);
+            card.SetMapPosition(mapX, mapY).AppendTo(this);
 
-            SetCellUnit(mapX, mapY, unit);
+            SetCellCard(mapX, mapY, card);
+
+            return true;
+        }
+        public bool AddCard(int mapX, int mapY, Card card)
+        {
+            if (IsDetectCardInRect(mapX, mapY, card.Size.X, card.Size.Y))
+                return false;
+
+            card.SetMapPosition(mapX, mapY).AppendTo(this);
+
+            SetCellCard(card.MapPosition.X, card.MapPosition.Y, card);
 
             return true;
         }
         public List<List<Cell>> GetMap()
         {
-            return _cells.Get2DList();
+            return _grid.Get2DList();
         }
         public bool IsPointInMap(int mapX, int mapY)
         {
@@ -126,9 +138,13 @@ namespace BattleSystem
         {
             return IsPointInMap(mapPoint.X, mapPoint.Y);
         }
-        public bool IsUnitInMap(Unit unit, Point translate)
+        public bool IsCardInMap(Card card, Point translate)
         {
-            return !(unit.MapPosition.X + translate.X < 0 || unit.MapPosition.X + translate.X> _mapW - unit.Size.X || unit.MapPosition.Y + translate.Y < 0 || unit.MapPosition.Y + translate.Y > _mapH - unit.Size.Y);
+            return !(card.MapPosition.X + translate.X < 0 || card.MapPosition.X + translate.X> _mapW - card.Size.X || card.MapPosition.Y + translate.Y < 0 || card.MapPosition.Y + translate.Y > _mapH - card.Size.Y);
+        }
+        public bool IsFullRectInsideMap(Point mapPosition, Point size, Point translate)
+        {
+            return !(mapPosition.X + translate.X < 0 || mapPosition.X + translate.X > _mapW - size.X || mapPosition.Y + translate.Y < 0 || mapPosition.Y + translate.Y > _mapH - size.Y);
         }
         public void SetCell(int mapX, int mapY, Cell cell)
         {
@@ -136,24 +152,24 @@ namespace BattleSystem
                 return;
 
             //_cells[mapX, mapY] = cell;
-            _cells.Put(mapX, mapY, cell);
+            _grid.Put(mapX, mapY, cell);
         }
-        public void SetCellUnit(int mapX, int mapY, Unit unit)
+        public void SetCellCard(int mapX, int mapY, Card card)
         {
-            if (unit != null)
+            if (card != null)
             {
-                if (mapX < 0 || mapX + unit.Size.X > _mapW || mapY < 0 || mapY + unit.Size.Y > _mapH)
+                if (mapX < 0 || mapX + card.Size.X > _mapW || mapY < 0 || mapY + card.Size.Y > _mapH)
                     return;
 
-                for (int i = 0; i < unit.Size.X; i++)
+                for (int i = 0; i < card.Size.X; i++)
                 {
-                    for (int j = 0; j < unit.Size.Y; j++)
+                    for (int j = 0; j < card.Size.Y; j++)
                     {
-                        var cell = _cells.Get(mapX + i, mapY + j); 
+                        var cell = _grid.Get(mapX + i, mapY + j); 
 
                         if (cell != null)
                         {
-                            cell._unit = unit;
+                            cell._card = card;
                             cell._passLevel = 1;
                         }
                     }
@@ -161,40 +177,41 @@ namespace BattleSystem
             }
 
         }
-        public void ClearAllCellUnit()
+        public void ClearAllCellCard()
         {
             for (int i = 0; i < _cellW; i++)
             {
                 for (int j = 0; j < _cellH; j++)
                 {
-                    var cell = _cells.Get(i, j);
+                    var cell = _grid.Get(i, j);
 
                     if (cell != null)
-                        cell._unit = null;
+                        cell._card = null;
                 }
             }
         }
         public void ClearArena()
         {
-            KillAll(new int[] { UID.Get<Unit>() });
-            ClearAllCellUnit();
+            KillAll(new int[] { UID.Get<Card>() });
+            ClearAllCellCard();
         }
-        public void EraseCellUnit(int mapX, int mapY, Unit unit)
+        public void EraseCellCard(int mapX, int mapY, Card card)
         {
-            if (unit != null)
+            //Console.WriteLine("EraseCellCard");
+            if (card != null)
             {
-                if (mapX < 0 || mapX + unit.Size.X > _mapW || mapY < 0 || mapY + unit.Size.Y > _mapH)
+                if (mapX < 0 || mapX + card.Size.X > _mapW || mapY < 0 || mapY + card.Size.Y > _mapH)
                     return;
 
-                for (int i = 0; i < unit.Size.X; i++)
+                for (int i = 0; i < card.Size.X; i++)
                 {
-                    for (int j = 0; j < unit.Size.Y; j++)
+                    for (int j = 0; j < card.Size.Y; j++)
                     {
-                        var cell = _cells.Get(mapX + i, mapY + j);
+                        var cell = _grid.Get(mapX + i, mapY + j);
 
                         if (cell != null)
                         {
-                            cell._unit = null;
+                            cell._card = null;
                             cell._passLevel = 0;
                         }
                     }
@@ -202,40 +219,55 @@ namespace BattleSystem
             }
 
         }
-        public void EraseCellUnit(Point mapPosition, Unit unit)
+        public void EraseCellCard(Point mapPosition, Card card)
         {
-            EraseCellUnit(mapPosition.X, mapPosition.Y, unit);
+            EraseCellCard(mapPosition.X, mapPosition.Y, card);
         }
-        public void EraseCellUnit(Unit unit)
+        public void EraseCellCard(Card card)
         {
-            EraseCellUnit(unit.MapPosition, unit);
+            EraseCellCard(card.MapPosition, card);
         }
         public Cell GetCell(int mapX, int mapY)
         {
             if (mapX < 0 || mapX > _mapW || mapY < 0 || mapY > _mapH)
                 return null;
             
-            return _cells.Get(mapX, mapY);
+            return _grid.Get(mapX, mapY);
         }
         public Cell GetCell(Point mapPosition)
         {
             return GetCell(mapPosition.X, mapPosition.Y);
         }
-        public Unit GetCellUnit(int mapX, int mapY)
+        private bool IsDetectCardInRect(int mapX, int mapY, int sizeW, int sizeH)
+        {
+            for (int i = 0; i < sizeW; i++)
+            {
+                for (int j = 0; j < sizeH; j++)
+                {
+                    var cell = _grid.Get(mapX + i, mapY + j);
+                    if (cell != null)
+                        if (cell._card != null)
+                            return true;
+                }
+            }
+
+            return false;
+        }
+        public Card GetCellCard(int mapX, int mapY)//, int sizeW, int sizeH)
         {
             if (mapX < 0 || mapX > _mapW || mapY < 0 || mapY > _mapH)
                 return null;
 
-            var cell = _cells.Get(mapX, mapY);
+            var cell = _grid.Get(mapX, mapY);
             
             if (cell != null)
-                return cell._unit;
+                return cell._card;
 
             return null;
         }
-        public Unit GetCellUnit(Point mapPosition)
+        public Card GetCellCard(Point mapPosition)//, Point size)
         {
-            return GetCellUnit(mapPosition.X, mapPosition.Y);
+            return GetCellCard(mapPosition.X, mapPosition.Y);//, size.X, size.Y);
         }
         private void UpdateCells()
         {
@@ -243,7 +275,7 @@ namespace BattleSystem
             {
                 for (int j = 0; j < _cellH; j++)
                 {
-                    var cell = _cells.Get(i, j);
+                    var cell = _grid.Get(i, j);
 
                     if (cell != null)
                         cell.Update();
@@ -256,57 +288,57 @@ namespace BattleSystem
             {
                 for (int j = 0; j < _cellH; j++)
                 {
-                    var cell = _cells.Get(i, j);
+                    var cell = _grid.Get(i, j);
                     if (cell != null)
                         cell.Draw(batch, AbsXY.ToPoint(), indexLayer);
                 }
             }
         }
-        public void MoveAllUnitLeft(int duration = 32)
+        public void MoveAllCardLeft(int duration = 32)
         {
             for (int i = 0; i < _mapW; i++)
             {
                 for (int j = 0; j < _mapH; j++)
                 {
-                    var unit = GetCellUnit(i, j);
-                    if (unit != null)
-                        unit.MoveToStep(new Point(-1, 0), duration);
+                    var card = GetCellCard(i, j);
+                    if (card != null)
+                        card.MoveToStep(new Point(-1, 0), duration);
                 }
             }
         }
-        public void MoveAllUnitRight(int duration = 32)
+        public void MoveAllCardRight(int duration = 32)
         {
             for (int i = _mapW; i >= 0; i--)
             {
                 for (int j = 0; j < _mapH; j++)
                 {
-                    var unit = GetCellUnit(i, j);
-                    if (unit != null)
-                        unit.MoveToStep(new Point(1, 0), duration);
+                    var card = GetCellCard(i, j);
+                    if (card != null)
+                        card.MoveToStep(new Point(1, 0), duration);
                 }
             }
         }
-        public void MoveAllUnitUp(int duration = 32)
+        public void MoveAllCardUp(int duration = 32)
         {
             for (int j = 0; j < _mapH; j++)
             {
                 for (int i = 0; i < _mapW; i++)
                 {
-                    var unit = GetCellUnit(i, j);
-                    if (unit != null)
-                        unit.MoveToStep(new Point(0, -1), duration);
+                    var card = GetCellCard(i, j);
+                    if (card != null)
+                        card.MoveToStep(new Point(0, -1), duration);
                 }
             }
         }
-        public void MoveAllUnitDown(int duration = 32)
+        public void MoveAllCardDown(int duration = 32)
         {
             for (int j = _mapH; j >= 0; j--)
             {
                 for (int i = 0; i < _mapW; i++)
                 {
-                    var unit = GetCellUnit(i, j);
-                    if (unit != null)
-                        unit.MoveToStep(new Point(0, 1), duration);
+                    var card = GetCellCard(i, j);
+                    if (card != null)
+                        card.MoveToStep(new Point(0, 1), duration);
                 }
             }
         }
@@ -319,21 +351,21 @@ namespace BattleSystem
         {
             UpdateRect();
 
-            _listItems = GroupOf(new int[] { UID.Get<Unit>() });
-            _dropZoneManager.Update(gameTime, _listItems);
+            _listCards = GroupOf(new int[] { UID.Get<Card>() });
+            _dropZoneManager.Update(gameTime, _listCards);
 
             switch (_state)
             {
                 case State.Phase_Player:
 
-                    if (CurrentUnitDragged != null)
+                    if (CurrentCardDragged != null)
                     {
                         // Quand drag un Unit , on change la position du pointeur (souris) par le milieu de l'Unit qui est en train d'être dragué
-                        _mouse.X = CurrentUnitDragged._rect.TopLeft.X + _cellW / 2;
-                        _mouse.Y = CurrentUnitDragged._rect.TopLeft.Y + _cellH / 2;
+                        _mouse.X = CurrentCardDragged._rect.TopLeft.X + _cellW / 2;
+                        _mouse.Y = CurrentCardDragged._rect.TopLeft.Y + _cellH / 2;
 
-                        _rectZoneDroppable.Width = _rect.Width - ((CurrentUnitDragged.Size.X - 1) * _cellW) + _cellW / 2;
-                        _rectZoneDroppable.Height = _rect.Height - ((CurrentUnitDragged.Size.Y - 1) * _cellH) + _cellH / 2;
+                        _rectZoneDroppable.Width = _rect.Width - ((CurrentCardDragged.Size.X - 1) * _cellW) + _cellW / 2;
+                        _rectZoneDroppable.Height = _rect.Height - ((CurrentCardDragged.Size.Y - 1) * _cellH) + _cellH / 2;
                     }
                     else
                     {
@@ -362,8 +394,8 @@ namespace BattleSystem
                     if (_isMouseOverGrid && Game1.MouseControl._down)
                     {
 
-                        if (CurrentUnitDragged != null)
-                            _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(CurrentUnitDragged._rect.Width, CurrentUnitDragged._rect.Height));
+                        if (CurrentCardDragged != null)
+                            _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(CurrentCardDragged._rect.Width, CurrentCardDragged._rect.Height));
                         else
                             _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(_cellW, _cellH));
                                                 
@@ -375,12 +407,12 @@ namespace BattleSystem
                         _dropZoneInGrid.UpdateZone(_rectCursor, -10);
                     }
 
-                    if (!_isMouseOverGrid && !Game1.MouseControl._isActiveDrag && CurrentUnitDragged != null)
+                    if (!_isMouseOverGrid && !Game1.MouseControl._isActiveDrag && CurrentCardDragged != null)
                         _dropZoneInGrid.SetActive(false);
                     else 
                         _dropZoneInGrid.SetActive(true);
 
-                    CurrentUnitDragged = null;
+                    CurrentCardDragged = null;
 
                     SortZAscending();
                     UpdateChildsSort(gameTime);
@@ -417,10 +449,10 @@ namespace BattleSystem
 
 
             #region DEBUG
-            if (ButtonControl.OnePress("MoveLeft", Keyboard.GetState().IsKeyDown(Keys.Left)))   MoveAllUnitLeft(16);    
-            if (ButtonControl.OnePress("MoveRight", Keyboard.GetState().IsKeyDown(Keys.Right))) MoveAllUnitRight(16);
-            if (ButtonControl.OnePress("MoveUp", Keyboard.GetState().IsKeyDown(Keys.Up)))       MoveAllUnitUp(16);    
-            if (ButtonControl.OnePress("MoveDown", Keyboard.GetState().IsKeyDown(Keys.Down)))   MoveAllUnitDown(16);
+            if (ButtonControl.OnePress("MoveLeft", Keyboard.GetState().IsKeyDown(Keys.Left)))   MoveAllCardLeft(16);    
+            if (ButtonControl.OnePress("MoveRight", Keyboard.GetState().IsKeyDown(Keys.Right))) MoveAllCardRight(16);
+            if (ButtonControl.OnePress("MoveUp", Keyboard.GetState().IsKeyDown(Keys.Up)))       MoveAllCardUp(16);    
+            if (ButtonControl.OnePress("MoveDown", Keyboard.GetState().IsKeyDown(Keys.Down)))   MoveAllCardDown(16);
             #endregion
 
             return base.Update(gameTime);
@@ -432,8 +464,8 @@ namespace BattleSystem
             if (indexLayer == (int)Layers.Main)
             {
                 // Show prevPosition of the CurrentUnitDragged
-                if (CurrentUnitDragged != null)
-                    GFX.FillRectangle(batch, CurrentUnitDragged.PrevPosition + AbsXY - (Vector2.One * (_loop._current - 20)), CurrentUnitDragged.AbsRectF.GetSize() + (Vector2.One * 2 * (_loop._current - 20)), Color.Black * .25f);
+                if (CurrentCardDragged != null)
+                    GFX.FillRectangle(batch, CurrentCardDragged.PrevPosition + AbsXY - (Vector2.One * (_loop._current - 20)), CurrentCardDragged.AbsRectF.GetSize() + (Vector2.One * 2 * (_loop._current - 20)), Color.Black * .25f);
 
                 //GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .2f);
                 GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .15f);
@@ -449,17 +481,17 @@ namespace BattleSystem
                 // Draw rectCursor if unit over in zone grid
                 if (Game1.MouseControl._isActiveDrag)
                 {
-                    if (CurrentUnitDragged != null)
+                    if (CurrentCardDragged != null)
                     {
                         RectangleF rectCursorExtend = ((RectangleF)_rectCursor).Extend(_loop._current);
                         Color color = Color.LawnGreen;
 
-                        if (!CurrentUnitDragged.IsPossibleToDrop)
+                        if (!CurrentCardDragged.IsPossibleToDrop)
                         {
                             color = Color.OrangeRed;
                         }
 
-                        if (IsUnitInMap(CurrentUnitDragged, Point.Zero))
+                        if (IsCardInMap(CurrentCardDragged, Point.Zero))
                         {
                             GFX.FillRectangle(batch, rectCursorExtend, color * .25f);
                             //GFX.Rectangle(batch, rectCursorExtend, color * .25f, 8f);
@@ -498,7 +530,7 @@ namespace BattleSystem
                 DrawChilds(batch, gameTime, indexLayer);
                 ShowDebug(batch);
 
-                GFX.LeftTopString(batch, Game1._fontMain, $"{_mouse} -- {_mapCursor} -- {CurrentUnitDragged} {CurrentUnitDragged?._index}", AbsXY + new Vector2(10, -20), Color.AntiqueWhite);
+                GFX.LeftTopString(batch, Game1._fontMain, $"{_mouse} -- {_mapCursor} -- {CurrentCardDragged} {CurrentCardDragged?._index}", AbsXY + new Vector2(10, -20), Color.AntiqueWhite);
 
                 GFX.LeftTopString(batch, Game1._fontMain, $"{_state} {_isMouseOverGrid}", AbsRectF.BottomLeft + new Vector2(10, 10), Color.AntiqueWhite);
             }
@@ -519,8 +551,8 @@ namespace BattleSystem
                 {
                     Vector2 pos = new Vector2(i * _cellW, j * _cellH) + AbsXY + new Vector2(_cellW/2, 20);
 
-                    if (_cells.Get(i, j)._unit != null)
-                        GFX.CenterBorderedStringXY(batch, Game1._fontMain, $"{_cells.Get(i, j)._unit._index}", pos + new Vector2(0, 40), Color.Yellow, Color.Red);
+                    if (_grid.Get(i, j)._card != null)
+                        GFX.CenterBorderedStringXY(batch, Game1._fontMain, $"{_grid.Get(i, j)._card._index}", pos + new Vector2(0, 40), Color.Yellow, Color.Red);
                     //else
                     //    GFX.LeftTopBorderedString(batch, Game1._fontMain, ".", pos, Color.Yellow, Color.Red);
 
@@ -531,12 +563,12 @@ namespace BattleSystem
 
             if (_isMouseOverGrid)
             {
-                var unit = _cells.Get(_mapCursor.X, _mapCursor.Y)._unit;
+                var card = _grid.Get(_mapCursor.X, _mapCursor.Y)._card;
                 
-                if (unit != null)
-                    GFX.TopCenterString(batch, Game1._fontMain, $"{unit} {unit._index}", unit._rect.TopCenter + AbsXY - Vector2.UnitY * 20, Color.Red * .75f);
+                if (card != null)
+                    GFX.TopCenterString(batch, Game1._fontMain, $"{card} {card._index}", card._rect.TopCenter + AbsXY - Vector2.UnitY * 20, Color.Red * .75f);
                 //else
-                //    GFX.TopCenterString(batch, Game1._fontMain, "No Unit Here", (_mapCursor * CellSize).ToVector2() + AbsXY + unit._rect.BottomCenter, Color.Red * .25f);
+                //    GFX.TopCenterString(batch, Game1._fontMain, "No Unit Here", (_mapCursor * CellSize).ToVector2() + AbsXY + card._rect.BottomCenter, Color.Red * .25f);
 
             }
         }
