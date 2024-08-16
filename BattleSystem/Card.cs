@@ -208,6 +208,9 @@ namespace BattleSystem
 
         public void AttackCard(int damage, float intensity = 10f)
         {
+            if (!Is(State.WAIT))
+                return;
+
             _shake.SetIntensity(intensity, .25f);
             _stats.SetDamage(damage);
 
@@ -251,11 +254,6 @@ namespace BattleSystem
                         _timer.StartTimer((int)Timer.Death);
                     }
 
-                    // Debug test SetDammage ! 
-                    if (_navi._isMouseOver && ButtonControl.OnePress("DebugAttackUnit", Mouse.GetState().RightButton == ButtonState.Pressed && Keyboard.GetState().IsKeyDown(Keys.Space)))
-                    {
-                        AttackCard(40);
-                    }
                     // Keep the cell if is dropped and set draggable
 
                     _draggable.SetDraggable(true);
@@ -538,6 +536,8 @@ namespace BattleSystem
                     break;
                 case State.DAMAGE:
 
+                    _draggable.SetDraggable(false);
+
                     if (!_shake.IsShake)
                         SetState(State.WAIT);
 
@@ -547,7 +547,9 @@ namespace BattleSystem
                     break;
                 
                 case State.DEAD:
-                    
+
+                    _draggable.SetDraggable(false);
+
                     if (_timer.OnTimer((int)Timer.Death))
                     {
                         //Console.WriteLine("Le est venu !!");

@@ -10,6 +10,8 @@ using Microsoft.Xna.Framework.Input;
 using System;
 using Mugen.Input;
 
+
+
 namespace BattleSystem
 {
     internal class ScreenPlay : Node
@@ -108,7 +110,7 @@ namespace BattleSystem
                 Init();
             }
 
-            if (ButtonControl.OnePress("AddCard",Mouse.GetState().RightButton == ButtonState.Pressed && Keyboard.GetState().IsKeyDown(Keys.LeftControl)))
+            if (ButtonControl.OnePress("AddCard",Mouse.GetState().LeftButton == ButtonState.Pressed && Keyboard.GetState().IsKeyDown(Keys.LeftControl)))
             {
                 //if (_arena.AddCard(_arena.MapCursor.X, _arena.MapCursor.Y, new Unit1x1(_arena)))
                 if (_arena.AddCard(_arena.MapCursor.X, _arena.MapCursor.Y, new Unit1x1(_arena)))
@@ -117,6 +119,15 @@ namespace BattleSystem
                     Console.WriteLine("Add Card Error : no place here");
 
             }
+            // Debug test Card SetDammage ! 
+            if (ButtonControl.OnePress("DebugAttackUnit", Mouse.GetState().RightButton == ButtonState.Pressed))// && Keyboard.GetState().IsKeyDown(Keys.Space)))
+            {
+                Card card = _arena.GetCellCard(_arena.MapCursor.X, _arena.MapCursor.Y);
+                
+                if (card != null)
+                    card.AttackCard(40);
+            }
+
 
             //_game.IsMouseVisible = !_mouseControl._isActiveDrag; // hide mouse when drag !
 

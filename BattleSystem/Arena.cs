@@ -7,7 +7,6 @@ using Mugen.Input;
 using Mugen.Physics;
 using System.Collections.Generic;
 using System;
-using static Mugen.Physics.Collide;
 
 
 namespace BattleSystem

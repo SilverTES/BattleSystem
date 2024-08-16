@@ -10,8 +10,15 @@
 
 #-------------------------------- References --------------------------------#
 
+/reference:C:\Users\MugenS30\.nuget\packages\monogame.aseprite\6.0.6\content\Monogame.Aseprite.Content.Pipeline.dll
 
 #---------------------------------- Content ---------------------------------#
+
+#begin Animations/dragon.aseprite
+/importer:AsepriteFileContentImporter
+/processor:AsepriteFileContentProcessor
+/processorParam:PremultiplyAlpha=True
+/build:Animations/dragon.aseprite
 
 #begin Effects/effectBasic.fx
 /importer:EffectImporter

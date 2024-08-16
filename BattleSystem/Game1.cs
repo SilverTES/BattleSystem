@@ -13,6 +13,10 @@ using System;
 using System.IO;
 using Mugen.Input;
 
+using AsepriteDotNet.Aseprite;
+using AsepriteDotNet.IO;
+using MonoGame.Aseprite;
+
 namespace BattleSystem
 {
     enum ButtonDown
@@ -81,6 +85,12 @@ namespace BattleSystem
         public static SoundEffect _soundPop;
         public static SoundEffect _soundWoodHit;
 
+        public static AsepriteFile _aseFile;
+        public static Sprite _sprite;
+
+        public static SpriteSheet _spriteSheet;
+        public static AnimatedSprite _animatedSprite;
+
         public static string _hello = "Hello tout le monde";
 
         public Vector2 _mouse;
@@ -141,9 +151,15 @@ namespace BattleSystem
             _btnFullScreen = (Gui.CheckBox)new Gui.CheckBox(MouseControl,"", style)
                 .SetPosition(ScreenW - 20, 20);
 
+            _sprite = _aseFile.CreateSprite(GraphicsDevice, 0);
+            _spriteSheet = _aseFile.CreateSpriteSheet(GraphicsDevice);
+
+            _animatedSprite = _spriteSheet.CreateAnimatedSprite("idle");
+            _animatedSprite.Play();
         }
         protected override void LoadContent()
         {
+            _aseFile = Content.Load<AsepriteFile>("Animations/dragon");
 
             guiFont = ImGui.GetIO().Fonts.AddFontFromFileTTF("Content\\Fonts\\SuiSenerisRg.otf", 20);
             _imGuiRenderer.RebuildFontAtlas();
@@ -174,7 +190,7 @@ namespace BattleSystem
             _soundPop = Content.Load<SoundEffect>("Sounds/pop");
             _soundWoodHit = Content.Load<SoundEffect>("Sounds/wood_hit");
 
-        _texMouseCursor = Content.Load<Texture2D>("Images/mouse_cursor");
+            _texMouseCursor = Content.Load<Texture2D>("Images/mouse_cursor");
             _texMouseCursor2 = Content.Load<Texture2D>("Images/mouse_cursor2");
             _mouseCursor = MouseCursor.FromTexture2D(_texMouseCursor, 0, 0);
             _mouseCursor2 = MouseCursor.FromTexture2D(_texMouseCursor2, 0, 0);
@@ -185,6 +201,8 @@ namespace BattleSystem
         }
         protected override void Update(GameTime gameTime)
         {
+            _animatedSprite.Update(gameTime);
+
             FrameCounter.Update(gameTime);
 
             _mouseState = Mouse.GetState();
@@ -270,7 +288,14 @@ namespace BattleSystem
 
 
             ScreenManager.BeginDraw((int)Layers.Main, SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap);
+            _animatedSprite.Color = Color.White;
+            _animatedSprite.ScaleX = 4f;
+            _animatedSprite.ScaleY = 4f;
+            _batch.Draw(_animatedSprite, new Vector2(820, 400));
             ScreenManager.DrawLayer((int)Layers.Main , gameTime);
+            
+            //_batch.Draw(_sprite, new Vector2(420, 360));
+
             ScreenManager.EndDraw();
 
 
