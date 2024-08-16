@@ -57,7 +57,7 @@ namespace BattleSystem
 
         public static MouseCursor _mouseCursor;
         public static MouseCursor _mouseCursor2;
-        public static MouseControl MouseControl;
+        public static MouseControl MouseControl = new();
 
         public static Texture2D _texMouseCursor;
         public static Texture2D _texMouseCursor2;
@@ -78,6 +78,7 @@ namespace BattleSystem
         public static Effect _effectBasic;
         public static Effect _effectColor;
 
+        public static SoundEffect _soundSword;
         public static SoundEffect _soundClock;
         public static SoundEffect _soundBlockHit;
         public static SoundEffect _soundBubble;
@@ -89,7 +90,7 @@ namespace BattleSystem
         public static Sprite _sprite;
 
         public static SpriteSheet _spriteSheet;
-        public static AnimatedSprite _animatedSprite;
+        //public static AnimatedSprite _animatedSprite;
 
         public static string _hello = "Hello tout le monde";
 
@@ -135,31 +136,27 @@ namespace BattleSystem
         {
             base.Initialize();
 
-            MouseControl = new();
-
-            _screenPlay = new ScreenPlay(this);
-
             GFX.Init(GraphicsDevice); // don't forget to initialize when to draw GFX shapes etc
             _batch = new SpriteBatch(GraphicsDevice);
-
-            ScreenManager.Init(_windowManager, _batch, _screenPlay.Init(), (int)Layers.Count);
-
-            _button = new StateEvent((int)ButtonDown.Count);
-
-            var style = (JObject)JsonConvert.DeserializeObject(File.ReadAllText("Content/Misc/styleBtnFullscreen.json"));
-
-            _btnFullScreen = (Gui.CheckBox)new Gui.CheckBox(MouseControl,"", style)
-                .SetPosition(ScreenW - 20, 20);
 
             _sprite = _aseFile.CreateSprite(GraphicsDevice, 0);
             _spriteSheet = _aseFile.CreateSpriteSheet(GraphicsDevice);
 
-            _animatedSprite = _spriteSheet.CreateAnimatedSprite("idle");
-            _animatedSprite.Play();
+            //_animatedSprite = _spriteSheet.CreateAnimatedSprite("slash");
+            //_animatedSprite.Play(loopCount: 4);
+
+
+            _button = new StateEvent((int)ButtonDown.Count);
+            var style = (JObject)JsonConvert.DeserializeObject(File.ReadAllText("Content/Misc/styleBtnFullscreen.json"));
+            _btnFullScreen = (Gui.CheckBox)new Gui.CheckBox(MouseControl,"", style)
+                .SetPosition(ScreenW - 20, 20);
+
+            _screenPlay = new ScreenPlay(this);
+            ScreenManager.Init(_windowManager, _batch, _screenPlay.Init(), (int)Layers.Count);
         }
         protected override void LoadContent()
         {
-            _aseFile = Content.Load<AsepriteFile>("Animations/dragon");
+            _aseFile = Content.Load<AsepriteFile>("Animations/slash");
 
             guiFont = ImGui.GetIO().Fonts.AddFontFromFileTTF("Content\\Fonts\\SuiSenerisRg.otf", 20);
             _imGuiRenderer.RebuildFontAtlas();
@@ -183,6 +180,7 @@ namespace BattleSystem
             _effectBasic = Content.Load<Effect>("Effects/effectBasic");
             _effectColor = Content.Load<Effect>("Effects/effectColor");
 
+            _soundSword = Content.Load<SoundEffect>("Sounds/sword");
             _soundClock = Content.Load<SoundEffect>("Sounds/clock");
             _soundBlockHit = Content.Load<SoundEffect>("Sounds/blockhit");
             _soundBubble = Content.Load<SoundEffect>("Sounds/bubble1");
@@ -201,7 +199,7 @@ namespace BattleSystem
         }
         protected override void Update(GameTime gameTime)
         {
-            _animatedSprite.Update(gameTime);
+            //_animatedSprite.Update(gameTime);
 
             FrameCounter.Update(gameTime);
 
@@ -288,13 +286,9 @@ namespace BattleSystem
 
 
             ScreenManager.BeginDraw((int)Layers.Main, SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap);
-            _animatedSprite.Color = Color.White;
-            _animatedSprite.ScaleX = 4f;
-            _animatedSprite.ScaleY = 4f;
-            _batch.Draw(_animatedSprite, new Vector2(820, 400));
-            ScreenManager.DrawLayer((int)Layers.Main , gameTime);
             
-            //_batch.Draw(_sprite, new Vector2(420, 360));
+
+            ScreenManager.DrawLayer((int)Layers.Main , gameTime);
 
             ScreenManager.EndDraw();
 
@@ -305,6 +299,20 @@ namespace BattleSystem
             
             ScreenManager.BeginDraw((int)Layers.FrontFX, SpriteSortMode.Deferred, BlendState.Additive, SamplerState.LinearWrap);
             ScreenManager.DrawLayer((int)Layers.FrontFX, gameTime);
+
+            //_animatedSprite.Color = Color.White;
+            ////var origin = _animatedSprite.CurrentFrame.TextureRegion.GetSlice("Slice1").Origin;
+            //_animatedSprite.ScaleX = .5f;
+            //_animatedSprite.ScaleY = .5f;
+            //_animatedSprite.Origin = new Vector2(_animatedSprite.Width / 2, _animatedSprite.Height / 2);
+            ////_animatedSprite.Origin = origin;
+
+            //_animatedSprite.Draw(_batch, _mouse);
+
+            //GFX.Point(_batch, _animatedSprite.Origin, 4, Color.Red);
+
+            //_batch.Draw(_sprite, new Vector2(420, 360));
+
             ScreenManager.EndDraw();
 
 

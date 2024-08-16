@@ -7,6 +7,7 @@ namespace BattleSystem
     public class Stats
     {
         internal int _nbAction = 1;
+        internal int _maxEnergy = 80;
         internal int _energy = 80;
         internal int _mana = 10;
         internal int _speed = 10;
@@ -26,7 +27,18 @@ namespace BattleSystem
         public void SetDamage(int damage = 1)
         {
             _damage = damage;
-            _animate.SetMotion("damage", Easing.QuadraticEaseOut, new Tweening(_energy, _energy - damage, 32));
+            
+            int prevEnergy = _energy;
+
+            _energy -= _damage;
+
+            if (_energy <= 0) 
+            { 
+                _energy = 0;
+                return;
+            }
+
+            _animate.SetMotion("damage", Easing.QuadraticEaseOut, new Tweening(prevEnergy, _energy, 32));
             _animate.Start("damage");
         }
 
@@ -39,7 +51,7 @@ namespace BattleSystem
 
             if (_animate.Off("damage"))
             {
-                Console.WriteLine("setdamage finish !");
+                //Console.WriteLine("setdamage finish !");
             }
 
 

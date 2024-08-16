@@ -20,6 +20,18 @@
 /processorParam:PremultiplyAlpha=True
 /build:Animations/dragon.aseprite
 
+#begin Animations/Elena-ts-stance.aseprite
+/importer:AsepriteFileContentImporter
+/processor:AsepriteFileContentProcessor
+/processorParam:PremultiplyAlpha=True
+/build:Animations/Elena-ts-stance.aseprite
+
+#begin Animations/slash.aseprite
+/importer:AsepriteFileContentImporter
+/processor:AsepriteFileContentProcessor
+/processorParam:PremultiplyAlpha=True
+/build:Animations/slash.aseprite
+
 #begin Effects/effectBasic.fx
 /importer:EffectImporter
 /processor:EffectProcessor
@@ -256,6 +268,12 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/pop.wav
+
+#begin Sounds/sword.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/sword.wav
 
 #begin Sounds/wood_hit.wav
 /importer:WavImporter

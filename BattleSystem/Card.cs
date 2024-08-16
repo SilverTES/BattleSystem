@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using MonoGame.Aseprite;
 using Mugen.Animation;
 using Mugen.Core;
 using Mugen.Event;
@@ -50,6 +51,7 @@ namespace BattleSystem
         // Dependencies
         protected Arena _arena;
 
+        
         //public List<List<Point>> _paths = new();
         //protected bool _isCanMove = true;
 
@@ -106,7 +108,7 @@ namespace BattleSystem
             _timer.SetTimer((int)Timer.Trail, TimerEvent.Time(0, 0, .001f));
             _timer.StartTimer((int)Timer.Trail);
 
-            _timer.SetTimer((int)Timer.Death, TimerEvent.Time(0, 0, 1.5f));
+            _timer.SetTimer((int)Timer.Death, TimerEvent.Time(0, 0, .5f));
             //_timer.SetTimer((int)Timer.CheckPath, TimerEvent.Time(0, 0, .02f));
             //_timer.StartTimer((int)Timer.CheckPath);
 
@@ -120,6 +122,9 @@ namespace BattleSystem
             _shake = new();
 
             _stats = new Stats();
+
+
+
         }
 
         public override Node Init()
@@ -206,7 +211,7 @@ namespace BattleSystem
             _y = _mapPosition.Y * _cellH;
         }
 
-        public void AttackCard(int damage, float intensity = 10f)
+        public void OnAttacked(int damage, float intensity = 10f)
         {
             if (!Is(State.WAIT))
                 return;
@@ -215,11 +220,14 @@ namespace BattleSystem
             _stats.SetDamage(damage);
 
             new PopInfo("-" + damage, Color.Yellow, Color.Red, 0, 24, 24)
-                .SetPosition(_rect.Center)
+                .SetPosition(_rect.TopCenter)
                 .AppendTo(_parent);
 
             SetState(State.DAMAGE);
-            Game1._soundWoodHit.Play(.25f, 1f, 0f);
+            Game1._soundSword.Play(.25f, 1f, 0f);
+
+            new Slash().SetPosition(_rect.Center).AppendTo(_parent);
+            
         }
         public void DestroyMe()
         {
@@ -229,6 +237,8 @@ namespace BattleSystem
         }
         public override Node Update(GameTime gameTime)
         {
+            
+
             _stats.Update(gameTime);
             _timer.Update();
             UpdateRect();
@@ -585,7 +595,8 @@ namespace BattleSystem
 
                 Color color = Color.White;
 
-                if (Is(State.DAMAGE)) color = Color.IndianRed * .5f;
+                if (Is(State.DAMAGE)) 
+                    color = Color.IndianRed * 1f;
 
                 if (Is(State.DEAD)) color = Color.Red;
 
@@ -596,12 +607,21 @@ namespace BattleSystem
                 //    GFX.Rectangle(batch, AbsRect, Color.Red * .5f, 2f);
                 //batch.Draw(Game1._texAvatar1x1, AbsXY, Color.Yellow);
 
-                //GFX.Point(batch, AbsRectF.TopLeft + Vector2.One * 20, 12, Color.Red *.5f);
-                if (_stats._energy > 20)
-                    GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_stats._energy}", AbsRectF.TopLeft + Vector2.One * 20 + _shake.GetVector2()*.5f, Color.GreenYellow, Color.Green);
-                else
-                    GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_stats._energy}", AbsRectF.TopLeft + Vector2.One * 20 + _shake.GetVector2() * .5f, Color.MonoGameOrange, Color.Red);
+                Color fg = Color.GreenYellow;
+                Color bg = Color.Green;
 
+                if (_stats._energy <= 20)
+                {
+                    fg = Color.Yellow;
+                    bg = Color.Red;
+                }
+                //GFX.Point(batch, AbsRectF.TopLeft + Vector2.One * 20, 12, Color.Red *.5f);
+
+                GFX.Bar(batch, AbsRectF.TopCenter + Vector2.UnitY * 2 - Vector2.UnitX * (_stats._maxEnergy / 2) + _shake.GetVector2() * .5f, _stats._maxEnergy, 8, Color.Red);
+                GFX.Bar(batch, AbsRectF.TopCenter + Vector2.UnitY * 2 - Vector2.UnitX * (_stats._maxEnergy / 2) + _shake.GetVector2() * .5f, _stats._energy, 8, fg);
+                GFX.BarLines(batch, AbsRectF.TopCenter + Vector2.UnitY * 2 - Vector2.UnitX * (_stats._maxEnergy / 2) + _shake.GetVector2() * .5f, _stats._maxEnergy, 8, Color.Black, 2);
+
+                GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_stats._energy}", AbsRectF.TopLeft + Vector2.One * 20 + _shake.GetVector2() * .5f, fg, bg);
                 GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_stats._mana}", AbsRectF.TopRight - Vector2.UnitX * 20 + Vector2.UnitY * 20, Color.MediumSlateBlue, Color.DarkBlue);
                 GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_stats._powerAttack}", AbsRectF.BottomLeft + Vector2.UnitX * 20 - Vector2.UnitY * 20, Color.Yellow, Color.Red);
             }
@@ -658,6 +678,11 @@ namespace BattleSystem
                 {
                     //GFX.Rectangle(batch, AbsRectF.Extend(2), Color.Orange * .5f, 2f);
                     GFX.BevelledRectangle(batch, AbsRectF.Extend(2) + _shake.GetVector2(), Vector2.One * 10, Color.PaleVioletRed *.75f, 4f);
+
+                    
+                   
+
+
                 }
             }
 

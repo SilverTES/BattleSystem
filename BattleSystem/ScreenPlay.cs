@@ -125,7 +125,7 @@ namespace BattleSystem
                 Card card = _arena.GetCellCard(_arena.MapCursor.X, _arena.MapCursor.Y);
                 
                 if (card != null)
-                    card.AttackCard(40);
+                    card.OnAttacked(Misc.Rng.Next(10,20));
             }
 
 
