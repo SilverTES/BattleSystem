@@ -10,7 +10,7 @@ namespace BattleSystem
 {
     public class Unit1x1 : Card
     {
-        public Unit1x1(Arena arena): base(arena)
+        public Unit1x1(Arena arena, float tempoBeforeSpawn = 0): base(arena, tempoBeforeSpawn)
         {
             _size.X = 1;
             _size.Y = 1;

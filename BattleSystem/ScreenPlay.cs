@@ -2,13 +2,13 @@
 using Microsoft.Xna.Framework.Graphics;
 using Mugen.Core;
 using Mugen.GFX;
-using Mugen.Physics;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.IO;
 using Microsoft.Xna.Framework.Input;
 using System;
 using Mugen.Input;
+using Mugen.Event;
 
 
 
@@ -33,6 +33,8 @@ namespace BattleSystem
 
         Node _layerGui;
 
+        FireCamp _fireCamp;
+
         public ScreenPlay(Game1 game) 
         { 
             _game = game;
@@ -45,7 +47,7 @@ namespace BattleSystem
 
             AddAddon(_loop);
 
-            _arena = new Arena(Game1.MouseControl, ArenaW, ArenaH, CellW, CellH);
+            _arena = new Arena(ArenaW, ArenaH, CellW, CellH);
             _arena.SetPosition(320, 20);
             _arena.AppendTo(this);
 
@@ -65,6 +67,8 @@ namespace BattleSystem
                 .SetPosition(160, Game1.ScreenH - 40)
                 .AppendTo(_layerGui);
 
+            _fireCamp = (FireCamp)new FireCamp().SetPosition(50,80).AppendTo(this);
+
         }
         public override Node Init()
         {
@@ -72,10 +76,10 @@ namespace BattleSystem
 
             InitChilds();
 
-            _arena.AddCard(9, 1, 2, 2);
-            _arena.AddCard(5, 2, 2, 3);
+            _arena.AddCard(7, 1, 2, 2);
+            _arena.AddCard(5, 4, 2, 3);
 
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < 20; i++)
             {
                 int x, y;
 
@@ -85,32 +89,32 @@ namespace BattleSystem
                     y = Misc.Rng.Next(0, ArenaH);
 
                 //} while (!_arena.AddCard(x, y, 1, 1));
-                } while (!_arena.AddCard(x, y, new Unit1x1(_arena)));
-
+                } while (!_arena.AddCard(x, y, new Unit1x1(_arena, TimerEvent.Time(0, 0, .1f * i))));
 
             }
 
             return base.Init();
         }
-        public override Node Update(GameTime gameTime)
+        private void HandleInput(GameTime gameTime)
         {
-
-            if (_btnRoll._navi._onClick)
+            if (_btnAction._navi._onClick)
             {
                 Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, .5f);
 
                 //_chainGrid.Init();
                 //Game1.Quit();
+                _arena.SetState(Arena.States.Transition);
             }
 
-            if (_btnAction._navi._onClick)
+            if (_btnRoll._navi._onClick)
             {
                 //Console.WriteLine("ScreenPlay.Init");
                 Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, .5f);
                 Init();
+                _arena.SetState(Arena.States.Phase_Player);
             }
 
-            if (ButtonControl.OnePress("AddCard",Mouse.GetState().LeftButton == ButtonState.Pressed && Keyboard.GetState().IsKeyDown(Keys.LeftControl)))
+            if (ButtonControl.OnePress("AddCard", Game1._mouseState.LeftButton == ButtonState.Pressed && Game1._keyState.IsKeyDown(Keys.LeftControl)))
             {
                 //if (_arena.AddCard(_arena.MapCursor.X, _arena.MapCursor.Y, new Unit1x1(_arena)))
                 if (_arena.AddCard(_arena.MapCursor.X, _arena.MapCursor.Y, new Unit1x1(_arena)))
@@ -120,7 +124,7 @@ namespace BattleSystem
 
             }
             // Debug test Card SetDammage ! 
-            if (ButtonControl.OnePress("DebugAttackUnit", Mouse.GetState().RightButton == ButtonState.Pressed))// && Keyboard.GetState().IsKeyDown(Keys.Space)))
+            if (ButtonControl.OnePress("DebugAttackUnit", Game1._mouseState.RightButton == ButtonState.Pressed))// && Keyboard.GetState().IsKeyDown(Keys.Space)))
             {
                 Card card = _arena.GetCellCard(_arena.MapCursor.X, _arena.MapCursor.Y);
                 
@@ -128,8 +132,19 @@ namespace BattleSystem
                     card.OnAttacked(Misc.Rng.Next(10,20));
             }
 
+            if (ButtonControl.OnePress("AddFireExplosion", Game1._mouseState.LeftButton == ButtonState.Pressed && Game1._keyState.IsKeyDown(Keys.F)))// && Keyboard.GetState().IsKeyDown(Keys.Space)))
+            {
+                //if (_arena._isMouseOverGrid)
+                    new FireExplosion().SetPosition(_arena.GetMouse()).AppendTo(_arena);
+            }
 
             //_game.IsMouseVisible = !_mouseControl._isActiveDrag; // hide mouse when drag !
+        }
+        public override Node Update(GameTime gameTime)
+        {
+            HandleInput(gameTime);
+
+            _fireCamp.SetPosition(Game1.MouseControl.GetPosition().ToVector2());
 
             UpdateChilds(gameTime);
 
@@ -142,9 +157,9 @@ namespace BattleSystem
         {
             batch.GraphicsDevice.Clear(Color.Transparent);
 
-            switch (indexLayer)
+            switch ((Layers)indexLayer)
             {
-                case (int)Layers.Main:
+                case Layers.Main:
 
                     batch.Draw(Game1._texBackground, new Vector2(0,_loop._current), Color.White * .5f);
                 
@@ -172,13 +187,13 @@ namespace BattleSystem
 
                     break;
 
-                case (int)Layers.Gui:
+                case Layers.Gui:
 
                     DrawChilds(batch, gameTime, indexLayer);
                     _layerGui.DrawChilds(batch, gameTime, indexLayer);
                     break;
 
-                case (int)Layers.FrontFX:
+                case Layers.FrontFX:
 
                     DrawChilds(batch, gameTime, indexLayer);
                     _layerGui.DrawChilds(batch, gameTime, indexLayer);
@@ -187,7 +202,7 @@ namespace BattleSystem
                     //GFX.Sight(batch, _mouse, Game1.ScreenW, Game1.ScreenH, Color.Yellow, 1f);
                     break;
 
-                case (int)Layers.BackFX:
+                case Layers.BackFX:
 
                     DrawChilds(batch, gameTime, indexLayer);
 
@@ -195,7 +210,7 @@ namespace BattleSystem
                     //GFX.Sight(batch, _mouse, Game1.ScreenW, Game1.ScreenH, Color.Yellow, 1f);
                     break;
 
-                case (int)Layers.Debug:
+                case Layers.Debug:
 
                     DrawChilds(batch, gameTime, indexLayer);
 

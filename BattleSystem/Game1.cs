@@ -14,7 +14,6 @@ using System.IO;
 using Mugen.Input;
 
 using AsepriteDotNet.Aseprite;
-using AsepriteDotNet.IO;
 using MonoGame.Aseprite;
 
 namespace BattleSystem
@@ -86,16 +85,17 @@ namespace BattleSystem
         public static SoundEffect _soundPop;
         public static SoundEffect _soundWoodHit;
 
-        public static AsepriteFile _aseFile;
-        public static Sprite _sprite;
+        //public static AsepriteFile _aseFile;
 
-        public static SpriteSheet _spriteSheet;
-        //public static AnimatedSprite _animatedSprite;
+        public static SpriteSheet _spriteSheetSlash;
+        public static SpriteSheet _spriteSheetFireExplosion;
+        public static SpriteSheet _spriteSheetFireCamp;
 
         public static string _hello = "Hello tout le monde";
 
         public Vector2 _mouse;
-        public static MouseState _mouseState = new();
+        public static MouseState _mouseState;
+        public static KeyboardState _keyState;
 
         private ScreenPlay _screenPlay;
         
@@ -128,10 +128,6 @@ namespace BattleSystem
             _imGuiRenderer = new ImGuiRenderer(this);
             _imGuiRenderer.RebuildFontAtlas();
         }
-        public static bool IsLayer(int indexLayer)
-        {
-            return indexLayer == (int)Layers.Count;
-        }
         protected override void Initialize()
         {
             base.Initialize();
@@ -139,11 +135,6 @@ namespace BattleSystem
             GFX.Init(GraphicsDevice); // don't forget to initialize when to draw GFX shapes etc
             _batch = new SpriteBatch(GraphicsDevice);
 
-            _sprite = _aseFile.CreateSprite(GraphicsDevice, 0);
-            _spriteSheet = _aseFile.CreateSpriteSheet(GraphicsDevice);
-
-            //_animatedSprite = _spriteSheet.CreateAnimatedSprite("slash");
-            //_animatedSprite.Play(loopCount: 4);
 
 
             _button = new StateEvent((int)ButtonDown.Count);
@@ -156,10 +147,11 @@ namespace BattleSystem
         }
         protected override void LoadContent()
         {
-            _aseFile = Content.Load<AsepriteFile>("Animations/slash");
+            //_aseFile = Content.Load<AsepriteFile>("Animations/slash");
 
             guiFont = ImGui.GetIO().Fonts.AddFontFromFileTTF("Content\\Fonts\\SuiSenerisRg.otf", 20);
             _imGuiRenderer.RebuildFontAtlas();
+
 
             _fontMain = Content.Load<SpriteFont>("Fonts/fontMain");
             _fontMain2 = Content.Load<SpriteFont>("Fonts/fontMain2");
@@ -192,6 +184,10 @@ namespace BattleSystem
             _texMouseCursor2 = Content.Load<Texture2D>("Images/mouse_cursor2");
             _mouseCursor = MouseCursor.FromTexture2D(_texMouseCursor, 0, 0);
             _mouseCursor2 = MouseCursor.FromTexture2D(_texMouseCursor2, 0, 0);
+
+            _spriteSheetSlash = Content.Load<AsepriteFile>("Animations/slash").CreateSpriteSheet(GraphicsDevice);
+            _spriteSheetFireExplosion = Content.Load<AsepriteFile>("Animations/FireExplosion").CreateSpriteSheet(GraphicsDevice);
+            _spriteSheetFireCamp = Content.Load<AsepriteFile>("Animations/FireCamp").CreateSpriteSheet(GraphicsDevice);
         }
         void ToggleShowDebug()
         {
@@ -204,6 +200,8 @@ namespace BattleSystem
             FrameCounter.Update(gameTime);
 
             _mouseState = Mouse.GetState();
+            _keyState = Keyboard.GetState();
+
             _windowManager.Update(_mouseState.Position.ToVector2());
             _mouse = _windowManager.GetMousePosition();
 
@@ -274,22 +272,13 @@ namespace BattleSystem
                 ImGui.InputText("Text", ref inputText, 32);
                 //ImGui.ShowDemoWindow();
                 _imGuiRenderer.AfterLayout();
-                //GFX.Draw(_batch, _texHeart, Color.White * .5f, 0, _mouse, Position.CENTER, Vector2.One * .5f);
-                //GFX.Sight(_batch, _mouse.X, _mouse.Y, ScreenW, ScreenH, Color.OrangeRed, 1f);
-                _batch.Draw(GFX._mouseCursor, _mouse, Color.Yellow);
-
-                //Texture2D tex = Field.Get<Game1, Texture2D>("_texBtnBase");
-                //_batch.Draw(tex, Vector2.One * 200, Color.White);
 
                 ScreenManager.EndDraw();
             }
 
 
             ScreenManager.BeginDraw((int)Layers.Main, SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap);
-            
-
             ScreenManager.DrawLayer((int)Layers.Main , gameTime);
-
             ScreenManager.EndDraw();
 
 
@@ -299,20 +288,6 @@ namespace BattleSystem
             
             ScreenManager.BeginDraw((int)Layers.FrontFX, SpriteSortMode.Deferred, BlendState.Additive, SamplerState.LinearWrap);
             ScreenManager.DrawLayer((int)Layers.FrontFX, gameTime);
-
-            //_animatedSprite.Color = Color.White;
-            ////var origin = _animatedSprite.CurrentFrame.TextureRegion.GetSlice("Slice1").Origin;
-            //_animatedSprite.ScaleX = .5f;
-            //_animatedSprite.ScaleY = .5f;
-            //_animatedSprite.Origin = new Vector2(_animatedSprite.Width / 2, _animatedSprite.Height / 2);
-            ////_animatedSprite.Origin = origin;
-
-            //_animatedSprite.Draw(_batch, _mouse);
-
-            //GFX.Point(_batch, _animatedSprite.Origin, 4, Color.Red);
-
-            //_batch.Draw(_sprite, new Vector2(420, 360));
-
             ScreenManager.EndDraw();
 
 

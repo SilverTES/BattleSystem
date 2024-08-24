@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using MonoGame.Aseprite;
 using Mugen.Animation;
 using Mugen.Core;
 using Mugen.Event;
@@ -18,113 +16,116 @@ namespace BattleSystem
     {
         protected enum Timer
         {
+            BeforeSpawn,
             Trail,
             Death,
+            Spawn,
             //CheckPath,
             Count
         }
-        protected TimerEvent _timer;
         public enum State
         {
-            NONE = -1,
-            WAIT,
-            MOVE,
-            ATTACK,
-            DAMAGE,
-            DEAD,
-            LAST
+            None = -1,
+            IsSpawn,
+            IsWait,
+            IsMove,
+            IsAttack,
+            IsDamaged,
+            IsDead,
+            Count
         }
-        public bool Is(State state) { return _state == state; }
+        public Point MapPosition => _mapPosition;
+        public Point Size => _size;
+        public Vector2 PrevPosition => _prevPosition;
+        public bool IsPossibleToDrop => _isPossibleToDrop;
+        public bool IsDropped => _isDropped;
+
+
+        protected TimerEvent _timer;
         // Statistic of the Unit
-        protected State _state = State.WAIT;
-        protected Stats _stats;
+        protected State _state = State.None;
+        protected Specs _specs = new();
 
         // Move position
         protected Vector2 _from;
         protected Vector2 _to;
         protected Point _toMap;
-
         // Tempo Move
         protected int _ticMove;
         protected int _tempoMove;
-
         // Dependencies
         protected Arena _arena;
-
-        
         //public List<List<Point>> _paths = new();
         //protected bool _isCanMove = true;
-
-        protected Point _size = new Point(1, 1);
-        public Point Size { get { return _size; } }
+        protected Point _size = new(1, 1);
         protected Point _mapPosition = new();
-        public Point MapPosition { get { return _mapPosition; } }
-
         // Come back to prev map position when drop in case is not possible
         protected bool _backToPrevPosition = false;
         //protected int _prevMapX;
         //protected int _prevMapY;
         protected Point _prevMapPosition = new();
         protected Vector2 _prevPosition = new();
-        public Vector2 PrevPosition { get { return _prevPosition; } }
 
         protected List<Point> _attackPoints = new List<Point>();
 
         protected int _cellW;
         protected int _cellH;
 
-        protected MouseControl _mouse;
+        protected bool _isDroppable = false;
+        protected bool _isDropped = true;
+        protected bool _isPossibleToDrop = false;
+        protected DropZone _dropZone;
 
         protected Addon.Draggable _draggable;
-
-        public bool _isDroppable = false;
-        public bool _isDropped = true;
-        public DropZone _dropZone;
-        protected bool _isPossibleToDrop = false;
-        public bool IsPossibleToDrop { get { return _isPossibleToDrop; } }
-
         protected Addon.Loop _loop;
-        protected Shake _shake;
+        protected Shake _shake = new();
 
-        public Card(Arena arena) 
+        protected float _spawnScale = 0f;
+        protected float _ticScale = 0f;
+        protected float _tempoScale = 60;
+
+        protected float _tempoBeforeSpawn = 0f;
+
+        public Card(Arena arena, float tempoBeforeSpawn = 0f) 
         {
             _type = UID.Get<Card>();
+            
             _arena = arena;
+            _tempoBeforeSpawn = tempoBeforeSpawn;
+
             _cellW = _arena.CellSize.X;
             _cellH = _arena.CellSize.Y;
 
-            _mouse = _arena._mouseControl;
-
             SetSize(_size.X * _cellW, _size.Y * _cellH);
 
-            _draggable = new Addon.Draggable(this, _mouse);
+            _draggable = new Addon.Draggable(this, Game1.MouseControl);
             _draggable.SetDragRectNode(true);
             _draggable.SetDraggable(true);
-
             AddAddon(_draggable);
 
-            _timer = new TimerEvent((int)Timer.Count);
-            
-            _timer.SetTimer((int)Timer.Trail, TimerEvent.Time(0, 0, .001f));
-            _timer.StartTimer((int)Timer.Trail);
-
-            _timer.SetTimer((int)Timer.Death, TimerEvent.Time(0, 0, .5f));
-            //_timer.SetTimer((int)Timer.CheckPath, TimerEvent.Time(0, 0, .02f));
-            //_timer.StartTimer((int)Timer.CheckPath);
-
             float angleDelta = .005f;
-
             _loop = new Addon.Loop(this);
             _loop.SetLoop(0, -Geo.RAD_225 * angleDelta, Geo.RAD_225 * angleDelta, .001f, Loops.PINGPONG);
             _loop.Start();
             AddAddon(_loop);
 
-            _shake = new();
+            _timer = new TimerEvent((int)Timer.Count);
+            _timer.SetTimer((int)Timer.Trail, TimerEvent.Time(0, 0, .001f));
+            _timer.SetTimer((int)Timer.Death, TimerEvent.Time(0, 0, .5f));
+            _timer.SetTimer((int)Timer.Spawn, TimerEvent.Time(0, 1.5f, 0));
+            _timer.SetTimer((int)Timer.BeforeSpawn, tempoBeforeSpawn);
 
-            _stats = new Stats();
+            _timer.StartTimer((int)Timer.BeforeSpawn);
 
+            _timer.StartTimer((int)Timer.Trail);
 
+            //_timer.SetTimer((int)Timer.CheckPath, TimerEvent.Time(0, 0, .02f));
+            //_timer.StartTimer((int)Timer.CheckPath);
 
+            SetState(State.None);
+
+            if (tempoBeforeSpawn == 0)
+                SetState(State.IsSpawn);
         }
 
         public override Node Init()
@@ -132,17 +133,62 @@ namespace BattleSystem
 
             return base.Init();
         }
-        public Vector2 GetCellSize()
+        //public Vector2 GetCellSize()
+        //{
+        //    return new Vector2(_cellW, _cellH);
+        //}
+        public void SetDroppable(bool isDroppable)
         {
-            return new Vector2(_cellW, _cellH);
+            _isDroppable = isDroppable;
+        }
+        public void SetDropped(bool isDropped)
+        {
+            _isDropped = isDropped;
+        }
+        public void SetDropZone(DropZone dropZone)
+        {
+            _dropZone = dropZone;
         }
         public void SetState(State state)
         {
             _state = state;
+
+            switch (_state)
+            {
+                case State.None:
+                    _draggable.SetDraggable(false);
+                    break;
+
+                case State.IsSpawn:
+                    new FireExplosion().SetPosition(_rect.Center).AppendTo(_arena);
+                    _draggable.SetDraggable(false);
+                    break;
+
+                case State.IsWait:
+                    _draggable.SetDraggable(true);
+                    break;
+
+                case State.IsMove:
+                    _draggable.SetDraggable(false);
+                    break;
+
+                case State.IsAttack:
+                    break;
+
+                case State.IsDamaged:
+                    break;
+
+                case State.IsDead:
+                    break;
+
+                case State.Count:
+                    break;
+            }
+
         }
         public bool MoveToStep(Point mapStep, int durationMove = 6) // true if move possible
         {
-            if (!_arena.IsCardInMap(this, mapStep) || _state == State.MOVE)
+            if (!_arena.IsCardInMap(this, mapStep) || _state == State.IsMove)
                 return false;
 
             Point mapDestPosition = _mapPosition + mapStep;
@@ -172,7 +218,7 @@ namespace BattleSystem
             _ticMove = 0;
             _tempoMove = durationMove;
 
-            SetState(State.MOVE);
+            SetState(State.IsMove);
 
             return true;
         }
@@ -184,7 +230,7 @@ namespace BattleSystem
             _ticMove = 0;
             _tempoMove = durationMove;
 
-            SetState(State.MOVE);
+            SetState(State.IsMove);
         }
 
         public Card SetMapPosition(int mapX, int mapY)
@@ -213,17 +259,22 @@ namespace BattleSystem
 
         public void OnAttacked(int damage, float intensity = 10f)
         {
-            if (!Is(State.WAIT))
+            if (_state != State.IsWait)
                 return;
 
             _shake.SetIntensity(intensity, .25f);
-            _stats.SetDamage(damage);
+            int overKill = _specs.SetDamage(damage);
 
-            new PopInfo("-" + damage, Color.Yellow, Color.Red, 0, 24, 24)
+            string str = "-" + damage;
+
+            if (overKill < 0)
+                str = "OVERKILL " + overKill;
+
+            new PopInfo(str, Color.Yellow, Color.Red, 0, 24, 24)
                 .SetPosition(_rect.TopCenter)
                 .AppendTo(_parent);
 
-            SetState(State.DAMAGE);
+            SetState(State.IsDamaged);
             Game1._soundSword.Play(.25f, 1f, 0f);
 
             new Slash().SetPosition(_rect.Center).AppendTo(_parent);
@@ -239,14 +290,14 @@ namespace BattleSystem
         {
             
 
-            _stats.Update(gameTime);
+            _specs.Update(gameTime);
             _timer.Update();
             UpdateRect();
 
             _mapPosition.X = (int)Math.Floor((_x+_cellW/2)/_cellW);
             _mapPosition.Y = (int)Math.Floor((_y+_cellH/2)/_cellH);
 
-            if (_navi._isMouseOver && _mouse._onClick && !_mouse._isOverAny && !_mouse._isActiveReSize)
+            if (_navi._isMouseOver && Game1.MouseControl._onClick && !Game1.MouseControl._isOverAny && !Game1.MouseControl._isActiveReSize)
             {
                 _parent.GotoFront(_index);
             }
@@ -254,19 +305,40 @@ namespace BattleSystem
 
             switch (_state)
             {
-                case State.NONE:
-                    break;
-                case State.WAIT:
+                case State.None:
 
-                    if (_stats._energy <= 0)
+                    if (_timer.OnTimer((int)Timer.BeforeSpawn))
                     {
-                        SetState(State.DEAD);
+                        SetState(State.IsSpawn);
+                        _ticScale = 0f;
+                    }
+
+                    break;
+
+                case State.IsSpawn:
+
+                    _spawnScale = Easing.GetValue(Easing.QuinticEaseOut, _ticScale, 0, 1, _tempoScale);
+
+                    _ticScale++;
+                    if (_ticScale >= _tempoScale)
+                    {
+                        _spawnScale = 1;
+
+                        SetState(State.IsWait);
+                    }
+
+                    break;
+
+                case State.IsWait:
+
+                    if (_specs.Energy <= 0)
+                    {
+                        SetState(State.IsDead);
                         _timer.StartTimer((int)Timer.Death);
                     }
 
                     // Keep the cell if is dropped and set draggable
-
-                    _draggable.SetDraggable(true);
+                    //_draggable.SetDraggable(true);
 
                     if (_isDropped)
                     {
@@ -282,7 +354,7 @@ namespace BattleSystem
 
                     if (_draggable._isDragged)
                     {
-                        Arena.CurrentCardDragged = this;
+                        _arena.SetCurrentDragged(this);
                         // test si l'unit dragué est le même unit dans la case , si oui on enlève l'unit de la case
                         var cellOver = _arena.GetCell(_mapPosition.X, _mapPosition.Y);
 
@@ -290,7 +362,7 @@ namespace BattleSystem
                         if (cellOver != null)
                             if (cellOver._card != null)
                             {
-                                if (Arena.CurrentCardDragged._index == cellOver._card._index)
+                                if (_arena.CurrentDragged._index == cellOver._card._index)
                                 {
                                     _arena.EraseCellCard(_mapPosition.X, _mapPosition.Y, cellOver._card);
                                 }
@@ -488,14 +560,14 @@ namespace BattleSystem
                         _prevMapPosition = _mapPosition;
                     }
 
-
                     break;
-                case State.MOVE:
+
+                case State.IsMove:
 
                     if (_timer.OnTimer((int)Timer.Trail))
                         new Trail(AbsRectF.Center, _size.ToVector2(), .025f, Color.WhiteSmoke).AppendTo(_parent);
 
-                    _draggable.SetDraggable(false);
+                    //_draggable.SetDraggable(false);
 
                     _x = Easing.GetValue(Easing.QuarticEaseOut, _ticMove, _from.X, _to.X, _tempoMove); // QuadraticEaseOut au lieu de Q***InOut pour eviter bug de détection de la dropZone _isNear car le mouvement est trop rapide a la fin
                     _y = Easing.GetValue(Easing.QuarticEaseOut, _ticMove, _from.Y, _to.Y, _tempoMove);
@@ -518,8 +590,8 @@ namespace BattleSystem
                             _isDroppable = false;
                             _isDropped = true;
 
-                            _dropZone._nearNode = this;
-                            _dropZone._containedNode = this;
+                            _dropZone.SetNearNode(this);
+                            _dropZone.SetContainerNode(this);
                             //Console.WriteLine("DropZone ContainedNode Affected !");
                             playSound = true;
                         }
@@ -533,30 +605,29 @@ namespace BattleSystem
                         if (playSound)
                             Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, 0f);
 
-                        SetState(State.WAIT);
+                        SetState(State.IsWait);
                     }
                     else
                     {
-                        // Efface les traces de l'unit dans l'Arena quand elle bouge toute seule
+                        // Efface les traces de la carte dans l'Arena quand elle bouge toute seule
                         if (!_isDroppable || !_draggable._isDragged)
                             _arena.EraseCellCard(_mapPosition.X, _mapPosition.Y, this);
                     }
                     break;
-                case State.ATTACK:
+
+                case State.IsAttack:
                     break;
-                case State.DAMAGE:
+
+                case State.IsDamaged:
 
                     _draggable.SetDraggable(false);
 
                     if (!_shake.IsShake)
-                        SetState(State.WAIT);
+                        SetState(State.IsWait);
 
                     break;
-                
-                case State.LAST:
-                    break;
-                
-                case State.DEAD:
+               
+                case State.IsDead:
 
                     _draggable.SetDraggable(false);
 
@@ -570,15 +641,20 @@ namespace BattleSystem
 
                 default:
                     break;
+
             }
 
             return base.Update(gameTime);
         }
         public override Node Draw(SpriteBatch batch, GameTime gameTime, int indexLayer)
         {
+            if (_state == State.None) 
+                return this;
+
             if (indexLayer == (int)Layers.Main)
             {
-                GFX.FillRectangle(batch, AbsRectF.Extend(-4), Color.Black * .8f);
+                //GFX.FillRectangle(batch, AbsRectF.Extend(-4), Color.Black * .8f);
+                var canvas = GFX.FillRectangleCentered(batch, AbsRectF.Center, AbsRectF.GetSize() * _spawnScale, Color.Black *.8f * _spawnScale, _loop._current);
 
                 if (_draggable._isDragged)
                 {
@@ -595,12 +671,12 @@ namespace BattleSystem
 
                 Color color = Color.White;
 
-                if (Is(State.DAMAGE)) 
+                if (_state == State.IsDamaged) 
                     color = Color.IndianRed * 1f;
 
-                if (Is(State.DEAD)) color = Color.Red;
+                if (_state == State.IsDead) color = Color.Red;
 
-                GFX.Draw(batch, tex, color * (_arena.IsCardInMap(this, Point.Zero)?1f:.75f), _loop._current, AbsXY + (tex.Bounds.Size.ToVector2()/2) + _shake.GetVector2(), Position.CENTER, Vector2.One);
+                GFX.Draw(batch, tex, color * (_arena.IsCardInMap(this, Point.Zero)?1f:.75f) * _spawnScale, _loop._current, AbsXY + (tex.Bounds.Size.ToVector2()/2) + _shake.GetVector2(), Position.CENTER, Vector2.One * _spawnScale);
 
 
                 //if (_isDroppable)
@@ -610,20 +686,25 @@ namespace BattleSystem
                 Color fg = Color.GreenYellow;
                 Color bg = Color.Green;
 
-                if (_stats._energy <= 20)
+                if (_specs.Energy <= 20)
                 {
                     fg = Color.Yellow;
                     bg = Color.Red;
                 }
                 //GFX.Point(batch, AbsRectF.TopLeft + Vector2.One * 20, 12, Color.Red *.5f);
 
-                GFX.Bar(batch, AbsRectF.TopCenter + Vector2.UnitY * 2 - Vector2.UnitX * (_stats._maxEnergy / 2) + _shake.GetVector2() * .5f, _stats._maxEnergy, 8, Color.Red);
-                GFX.Bar(batch, AbsRectF.TopCenter + Vector2.UnitY * 2 - Vector2.UnitX * (_stats._maxEnergy / 2) + _shake.GetVector2() * .5f, _stats._energy, 8, fg);
-                GFX.BarLines(batch, AbsRectF.TopCenter + Vector2.UnitY * 2 - Vector2.UnitX * (_stats._maxEnergy / 2) + _shake.GetVector2() * .5f, _stats._maxEnergy, 8, Color.Black, 2);
+                // Show Stats
+                //if (_state != State.IsSpawn)
+                {
+                    GFX.Bar(batch, canvas.TopCenter + Vector2.UnitY * 2 - Vector2.UnitX * (_specs.MaxEnergy / 2) + _shake.GetVector2() * .5f, _specs.MaxEnergy, 8, Color.Red * _spawnScale);
+                    GFX.Bar(batch, canvas.TopCenter + Vector2.UnitY * 2 - Vector2.UnitX * (_specs.MaxEnergy / 2) + _shake.GetVector2() * .5f, _specs.Energy, 8, fg * _spawnScale);
+                    GFX.BarLines(batch, canvas.TopCenter + Vector2.UnitY * 2 - Vector2.UnitX * (_specs.MaxEnergy / 2) + _shake.GetVector2() * .5f, _specs.MaxEnergy, 8, Color.Black * _spawnScale, 2);
 
-                GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_stats._energy}", AbsRectF.TopLeft + Vector2.One * 20 + _shake.GetVector2() * .5f, fg, bg);
-                GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_stats._mana}", AbsRectF.TopRight - Vector2.UnitX * 20 + Vector2.UnitY * 20, Color.MediumSlateBlue, Color.DarkBlue);
-                GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_stats._powerAttack}", AbsRectF.BottomLeft + Vector2.UnitX * 20 - Vector2.UnitY * 20, Color.Yellow, Color.Red);
+                    GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_specs.Energy}", canvas.TopLeft + Vector2.One * 20 + _shake.GetVector2() * .5f, fg * _spawnScale, bg * _spawnScale);
+                    GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_specs.Mana}", canvas.TopRight - Vector2.UnitX * 20 + Vector2.UnitY * 20, Color.MediumSlateBlue * _spawnScale, Color.DarkBlue * _spawnScale);
+                    GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_specs.PowerAttack}", canvas.BottomLeft + Vector2.UnitX * 20 - Vector2.UnitY * 20, Color.Yellow * _spawnScale, Color.Red * _spawnScale);
+                }
+
             }
 
             if (indexLayer == (int)Layers.Debug)
@@ -658,7 +739,7 @@ namespace BattleSystem
 
             if(indexLayer == (int)Layers.BackFX)
             {
-                if (_state == State.MOVE) 
+                if (_state == State.IsMove) 
                 {
                     float alpha = _tempoMove/(float)(_ticMove*5+.01f);
 
@@ -674,7 +755,7 @@ namespace BattleSystem
 
             if (indexLayer == (int)Layers.FrontFX)
             {
-                if (Is(State.DAMAGE))
+                if (_state == State.IsDamaged)
                 {
                     //GFX.Rectangle(batch, AbsRectF.Extend(2), Color.Orange * .5f, 2f);
                     GFX.BevelledRectangle(batch, AbsRectF.Extend(2) + _shake.GetVector2(), Vector2.One * 10, Color.PaleVioletRed *.75f, 4f);

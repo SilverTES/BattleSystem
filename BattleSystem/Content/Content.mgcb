@@ -26,6 +26,18 @@
 /processorParam:PremultiplyAlpha=True
 /build:Animations/Elena-ts-stance.aseprite
 
+#begin Animations/FireCamp.aseprite
+/importer:AsepriteFileContentImporter
+/processor:AsepriteFileContentProcessor
+/processorParam:PremultiplyAlpha=True
+/build:Animations/FireCamp.aseprite
+
+#begin Animations/FireExplosion.aseprite
+/importer:AsepriteFileContentImporter
+/processor:AsepriteFileContentProcessor
+/processorParam:PremultiplyAlpha=True
+/build:Animations/FireExplosion.aseprite
+
 #begin Animations/slash.aseprite
 /importer:AsepriteFileContentImporter
 /processor:AsepriteFileContentProcessor

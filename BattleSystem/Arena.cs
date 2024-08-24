@@ -13,7 +13,7 @@ namespace BattleSystem
 {
     public class Arena : Node
     {
-        enum State
+        public enum States
         {
             Phase_Player,
             Phase_Enemy,
@@ -21,10 +21,9 @@ namespace BattleSystem
             LAST
         }
 
-        State _state = State.Phase_Player;
+        States _state = States.Phase_Player;
 
-        public static Card CurrentCardDragged;
-        public MouseControl _mouseControl { get; private set; }
+        public Card CurrentDragged { get; private set; }
         int _mapW;
         int _mapH;
 
@@ -55,9 +54,8 @@ namespace BattleSystem
         
         List<Node> _listCards;
         
-        public Arena(MouseControl mouseControl, int mapW, int mapH, int cellW = 32, int cellH = 32) 
+        public Arena(int mapW, int mapH, int cellW = 32, int cellH = 32) 
         { 
-            _mouseControl = mouseControl;
             _mapW = mapW;
             _mapH = mapH;
             MapSize = new Point(mapW, mapH);
@@ -79,7 +77,7 @@ namespace BattleSystem
             _loop.Start();
             AddAddon(_loop);
 
-            int[] _droppables = new int[] { UID.Get<Card>() };
+            int[] _droppables = [UID.Get<Card>()]; // equivalent : new int[] {UID.Get<Card>()}
 
 
             _dropZoneManager = new DropZoneManager();
@@ -89,6 +87,18 @@ namespace BattleSystem
             _dropZoneManager.AddZone(_dropZoneInGrid);
             _dropZoneInGrid.Show(false);
 
+        }
+        public void SetState(States state)
+        {
+            _state = state;
+        }
+        public Vector2 GetMouse()
+        {
+            return _mouse; 
+        }
+        public void SetCurrentDragged(Card card)
+        {
+            CurrentDragged = card;
         }
         public void InitAllCells()
         {
@@ -355,16 +365,16 @@ namespace BattleSystem
 
             switch (_state)
             {
-                case State.Phase_Player:
+                case States.Phase_Player:
 
-                    if (CurrentCardDragged != null)
+                    if (CurrentDragged != null)
                     {
                         // Quand drag un Unit , on change la position du pointeur (souris) par le milieu de l'Unit qui est en train d'être dragué
-                        _mouse.X = CurrentCardDragged._rect.TopLeft.X + _cellW / 2;
-                        _mouse.Y = CurrentCardDragged._rect.TopLeft.Y + _cellH / 2;
+                        _mouse.X = CurrentDragged._rect.TopLeft.X + _cellW / 2;
+                        _mouse.Y = CurrentDragged._rect.TopLeft.Y + _cellH / 2;
 
-                        _rectZoneDroppable.Width = _rect.Width - ((CurrentCardDragged.Size.X - 1) * _cellW) + _cellW / 2;
-                        _rectZoneDroppable.Height = _rect.Height - ((CurrentCardDragged.Size.Y - 1) * _cellH) + _cellH / 2;
+                        _rectZoneDroppable.Width = _rect.Width - ((CurrentDragged.Size.X - 1) * _cellW) + _cellW / 2;
+                        _rectZoneDroppable.Height = _rect.Height - ((CurrentDragged.Size.Y - 1) * _cellH) + _cellH / 2;
                     }
                     else
                     {
@@ -393,8 +403,8 @@ namespace BattleSystem
                     if (_isMouseOverGrid && Game1.MouseControl._down)
                     {
 
-                        if (CurrentCardDragged != null)
-                            _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(CurrentCardDragged._rect.Width, CurrentCardDragged._rect.Height));
+                        if (CurrentDragged != null)
+                            _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(CurrentDragged._rect.Width, CurrentDragged._rect.Height));
                         else
                             _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(_cellW, _cellH));
                                                 
@@ -406,17 +416,15 @@ namespace BattleSystem
                         _dropZoneInGrid.UpdateZone(_rectCursor, -10);
                     }
 
-                    if (!_isMouseOverGrid && !Game1.MouseControl._isActiveDrag && CurrentCardDragged != null)
+                    if (!_isMouseOverGrid && !Game1.MouseControl._isActiveDrag && CurrentDragged != null)
                         _dropZoneInGrid.SetActive(false);
                     else 
                         _dropZoneInGrid.SetActive(true);
 
-                    CurrentCardDragged = null;
+                    CurrentDragged = null;
 
                     SortZAscending();
                     UpdateChildsSort(gameTime);
-
-                    
                     UpdateCells();
 
                     // reset focus
@@ -432,14 +440,14 @@ namespace BattleSystem
 
 
                     break;
-                case State.Phase_Enemy:
+                case States.Phase_Enemy:
 
 
                     break;
-                case State.LAST:
+                case States.LAST:
 
                     break;
-                case State.Transition:
+                case States.Transition:
 
                     break;
                 default:
@@ -463,8 +471,8 @@ namespace BattleSystem
             if (indexLayer == (int)Layers.Main)
             {
                 // Show prevPosition of the CurrentUnitDragged
-                if (CurrentCardDragged != null)
-                    GFX.FillRectangle(batch, CurrentCardDragged.PrevPosition + AbsXY - (Vector2.One * (_loop._current - 20)), CurrentCardDragged.AbsRectF.GetSize() + (Vector2.One * 2 * (_loop._current - 20)), Color.Black * .25f);
+                if (CurrentDragged != null)
+                    GFX.FillRectangle(batch, CurrentDragged.PrevPosition + AbsXY - (Vector2.One * (_loop._current - 20)), CurrentDragged.AbsRectF.GetSize() + (Vector2.One * 2 * (_loop._current - 20)), Color.Black * .25f);
 
                 //GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .2f);
                 GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .15f);
@@ -480,17 +488,17 @@ namespace BattleSystem
                 // Draw rectCursor if unit over in zone grid
                 if (Game1.MouseControl._isActiveDrag)
                 {
-                    if (CurrentCardDragged != null)
+                    if (CurrentDragged != null)
                     {
                         RectangleF rectCursorExtend = ((RectangleF)_rectCursor).Extend(_loop._current);
                         Color color = Color.LawnGreen;
 
-                        if (!CurrentCardDragged.IsPossibleToDrop)
+                        if (!CurrentDragged.IsPossibleToDrop)
                         {
                             color = Color.OrangeRed;
                         }
 
-                        if (IsCardInMap(CurrentCardDragged, Point.Zero))
+                        if (IsCardInMap(CurrentDragged, Point.Zero))
                         {
                             GFX.FillRectangle(batch, rectCursorExtend, color * .25f);
                             //GFX.Rectangle(batch, rectCursorExtend, color * .25f, 8f);
@@ -529,7 +537,7 @@ namespace BattleSystem
                 DrawChilds(batch, gameTime, indexLayer);
                 ShowDebug(batch);
 
-                GFX.LeftTopString(batch, Game1._fontMain, $"{_mouse} -- {_mapCursor} -- {CurrentCardDragged} {CurrentCardDragged?._index}", AbsXY + new Vector2(10, -20), Color.AntiqueWhite);
+                GFX.LeftTopString(batch, Game1._fontMain, $"{_mouse} -- {_mapCursor} -- {CurrentDragged} {CurrentDragged?._index}", AbsXY + new Vector2(10, -20), Color.AntiqueWhite);
 
                 GFX.LeftTopString(batch, Game1._fontMain, $"{_state} {_isMouseOverGrid}", AbsRectF.BottomLeft + new Vector2(10, 10), Color.AntiqueWhite);
             }

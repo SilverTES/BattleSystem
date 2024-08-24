@@ -13,9 +13,9 @@ namespace BattleSystem
 
         public RectangleF _rect = new();
 
-        public RectangleF _rectNear = new();
-        public Node _nearNode = null;
-        public Node _containedNode = null;
+        private RectangleF _rectNear = new();
+        private Node _nearNode = null;
+        private Node _containedNode = null;
 
         public bool _isNearNode = false;
 
@@ -29,7 +29,14 @@ namespace BattleSystem
             _droppablesType = droppables;
             _rectNear = _rect.Extend(nearZoneSize);
         }
-
+        public void SetContainerNode(Node node) 
+        {
+            _containedNode = node;
+        }
+        public void SetNearNode(Node node)
+        {
+            _nearNode = node;
+        }
         public void Show(bool isShow)
         { 
             _isShow = isShow;
@@ -63,14 +70,14 @@ namespace BattleSystem
                         {
                             if (item._type == UID.Get<Card>())
                             {
-                                var unit = item.This<Card>();
+                                var card = item.This<Card>();
                                 
-                                if (!unit._isDropped)
+                                if (!card.IsDropped)
                                 {
                                     if (_containedNode == null)
                                     {
-                                        unit._dropZone = this;
-                                        unit._isDroppable = true;
+                                        card.SetDropZone(this);
+                                        card.SetDroppable(true);
                                     }
 
                                 }
@@ -140,7 +147,7 @@ namespace BattleSystem
             foreach (var item in nodeToCheck)
             {
                 if (item._type == UID.Get<Card>())
-                item.This<Card>()._isDroppable = false;
+                item.This<Card>().SetDroppable(false);
             }
 
             for (int i = 0; i < _zones.Count; i++)
