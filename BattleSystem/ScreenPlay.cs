@@ -81,7 +81,7 @@ namespace BattleSystem
             _arena.AddCard(7, 1, 2, 2);
             _arena.AddCard(5, 4, 2, 3);
 
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 8; i++)
             {
                 int x, y;
 

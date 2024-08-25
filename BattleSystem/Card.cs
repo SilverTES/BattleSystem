@@ -116,10 +116,15 @@ namespace BattleSystem
         protected float _alphaSpawn = 0f;
 
         protected float _tempoBeforeSpawn = 0f;
+        
+        static float _zIndexCard = 0;
         #endregion
+
 
         public Card(Arena arena, float tempoBeforeSpawn = 0f) 
         {
+            _z = _zIndexCard++;
+
             _type = UID.Get<Card>();
             
             _arena = arena;
@@ -378,6 +383,9 @@ namespace BattleSystem
         }
         protected virtual void OnDragged()
         {
+            //Console.WriteLine($"OnDragged {_index} GOTO FRONT");
+            _arena.GotoFront(_index, UID.Get<Card>());
+
             _isDropped = false;
             _prevPosition = XY;
             _prevMapPosition = _mapPosition;
@@ -581,8 +589,8 @@ namespace BattleSystem
                 _timer.StartTimer((int)Timer.Death);
             }
 
-            if (_navi._isMouseOver && Game1.MouseControl._onClick && !Game1.MouseControl._isOverAny && !Game1.MouseControl._isActiveReSize)
-                _parent.GotoFront(_index);
+            //if (_navi._isMouseOver && Game1.MouseControl._onClick && !Game1.MouseControl._isOverAny && !Game1.MouseControl._isActiveReSize)
+                //_arena.GotoFront(_index);
 
             if (_isDropped)
                 _arena.SetCellCard(_mapPosition.X, _mapPosition.Y, this);
@@ -620,7 +628,8 @@ namespace BattleSystem
                 if (_state == State.IsDamaged) 
                     color = Color.IndianRed * 1f;
 
-                if (_state == State.IsDead) color = Color.Red;
+                if (_state == State.IsDead) 
+                    color = Color.Red;
 
                 GFX.Draw(batch, tex, color * (_arena.IsCardInMap(this, Point.Zero)?1f:.75f) * _alphaSpawn, _loop._current, AbsXY + (tex.Bounds.Size.ToVector2()/2) + _shake.GetVector2(), Position.CENTER, Vector2.One * _scaleSpawn);
 
@@ -646,6 +655,8 @@ namespace BattleSystem
                     GFX.Bar(batch, canvas.TopCenter + Vector2.UnitY * 2 - Vector2.UnitX * (_specs.MaxEnergy / 2) + _shake.GetVector2() * .5f, _specs.Energy, 8, fg * _alphaSpawn);
                     GFX.BarLines(batch, canvas.TopCenter + Vector2.UnitY * 2 - Vector2.UnitX * (_specs.MaxEnergy / 2) + _shake.GetVector2() * .5f, _specs.MaxEnergy, 8, Color.Black * _alphaSpawn, 2);
 
+                    GFX.Bar(batch, canvas.TopCenter + (Vector2.UnitY * - 0.25f) - Vector2.UnitX * (_specs.MaxEnergy / 2) + _shake.GetVector2() * .5f, _specs.MaxEnergy, 2, Color.White * .5f);
+
                     GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_specs.Energy}", canvas.TopLeft + Vector2.One * 20 + _shake.GetVector2() * .5f, fg * _alphaSpawn, bg * _alphaSpawn);
                     GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_specs.Mana}", canvas.TopRight - Vector2.UnitX * 20 + Vector2.UnitY * 20, Color.MediumSlateBlue * _alphaSpawn, Color.DarkBlue * _alphaSpawn);
                     GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_specs.PowerAttack}", canvas.BottomLeft + Vector2.UnitX * 20 - Vector2.UnitY * 20, Color.Yellow * _alphaSpawn, Color.Red * _alphaSpawn);
@@ -655,7 +666,7 @@ namespace BattleSystem
 
             if (indexLayer == (int)Layers.Debug)
             {
-                GFX.CenterStringXY(batch, Game1._fontMain, $"{_mapPosition}\n isDropped={_isDropped}\n{_state}\n{_type}\n{_subType}", AbsRectF.BottomCenter, Color.Yellow);
+                GFX.CenterStringXY(batch, Game1._fontMain, $"{_mapPosition}\n{_state}\n_type={_type}\nZIndex={_arena.GetChildZIndex(_index)._index}\n_z={_z}", AbsRectF.BottomCenter, Color.Yellow);
 
                 //if (_paths != null && _draggable._isDragged)
                 //    if (_paths.Count > 0)
@@ -695,8 +706,6 @@ namespace BattleSystem
                     GFX.Line(batch, _from + _parent.XY + new Vector2(_cellW/2, _cellH/2), AbsXY + new Vector2(_cellW / 2, _cellH / 2), Color.White * alpha, _cellW/5);
 
                 }
-
-
             }
 
             if (indexLayer == (int)Layers.FrontFX)

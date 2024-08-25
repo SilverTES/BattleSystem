@@ -396,7 +396,7 @@ namespace BattleSystem
 
 
                     // Manage Drag & Drop Zone
-                    if (_isMouseOverGrid && Game1.MouseControl._down)
+                    //if (_isMouseOverGrid && Game1.MouseControl._down)
                     {
 
                         if (CurrentDragged != null)
@@ -412,13 +412,13 @@ namespace BattleSystem
                         _dropZoneInGrid.UpdateZone(_rectCursor, -10);
                     }
 
-                    _dropZoneManager.Update(gameTime, GroupOf([UID.Get<Card>()]));
 
                     if (!_isMouseOverGrid && !Game1.MouseControl._isActiveDrag && CurrentDragged != null)
                         _dropZoneInGrid.SetActive(false);
                     else 
                         _dropZoneInGrid.SetActive(true);
 
+                    _dropZoneManager.Update(gameTime, GroupOf([UID.Get<Card>()]));
 
                     CurrentDragged = null;
 
