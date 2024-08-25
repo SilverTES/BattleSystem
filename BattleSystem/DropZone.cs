@@ -14,10 +14,9 @@ namespace BattleSystem
         public RectangleF _rect = new();
 
         private RectangleF _rectNear = new();
-        private Node _nearNode = null;
         private Node _containedNode = null;
 
-        public bool _isNearNode = false;
+        bool _isNearNode = false;
 
         int[] _droppablesType; // Nodes droppables in the zone
 
@@ -32,10 +31,6 @@ namespace BattleSystem
         public void SetContainerNode(Node node) 
         {
             _containedNode = node;
-        }
-        public void SetNearNode(Node node)
-        {
-            _nearNode = node;
         }
         public void Show(bool isShow)
         { 
@@ -77,7 +72,7 @@ namespace BattleSystem
                                     if (_containedNode == null)
                                     {
                                         card.SetDropZone(this);
-                                        card.SetDroppable(true);
+                                        card.SetDropZonable(true);
                                     }
 
                                 }
@@ -101,7 +96,6 @@ namespace BattleSystem
 
             if (!_isNearNode)
             {
-                _nearNode = null;
                 _containedNode = null;
             }
         }
@@ -147,7 +141,7 @@ namespace BattleSystem
             foreach (var item in nodeToCheck)
             {
                 if (item._type == UID.Get<Card>())
-                item.This<Card>().SetDroppable(false);
+                item.This<Card>().SetDropZonable(false);
             }
 
             for (int i = 0; i < _zones.Count; i++)

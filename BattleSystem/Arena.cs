@@ -52,8 +52,6 @@ namespace BattleSystem
         DropZoneManager _dropZoneManager;
         DropZone _dropZoneInGrid;
         
-        List<Node> _listCards;
-        
         public Arena(int mapW, int mapH, int cellW = 32, int cellH = 32) 
         { 
             _mapW = mapW;
@@ -81,7 +79,8 @@ namespace BattleSystem
 
 
             _dropZoneManager = new DropZoneManager();
-            //_dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 0, _cellW, _cellH), -10, _droppables));
+            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 0, _cellW, _cellH), -10, _droppables));
+            _dropZoneManager.AddZone(new DropZone(new Rectangle(20, 120 + 180 * 1, _cellW, _cellH), -10, _droppables));
 
             _dropZoneInGrid = new DropZone(new Rectangle(0, 0, _cellW, _cellH), -10, _droppables);
             _dropZoneManager.AddZone(_dropZoneInGrid);
@@ -188,12 +187,12 @@ namespace BattleSystem
         }
         public void ClearAllCellCard()
         {
-            for (int i = 0; i < _cellW; i++)
+            for (int i = 0; i < _mapW; i++)
             {
-                for (int j = 0; j < _cellH; j++)
+                for (int j = 0; j < _mapH; j++)
                 {
                     var cell = _grid.Get(i, j);
-
+                    
                     if (cell != null)
                         cell._card = null;
                 }
@@ -360,9 +359,6 @@ namespace BattleSystem
         {
             UpdateRect();
 
-            _listCards = GroupOf(new int[] { UID.Get<Card>() });
-            _dropZoneManager.Update(gameTime, _listCards);
-
             switch (_state)
             {
                 case States.Phase_Player:
@@ -416,10 +412,13 @@ namespace BattleSystem
                         _dropZoneInGrid.UpdateZone(_rectCursor, -10);
                     }
 
+                    _dropZoneManager.Update(gameTime, GroupOf([UID.Get<Card>()]));
+
                     if (!_isMouseOverGrid && !Game1.MouseControl._isActiveDrag && CurrentDragged != null)
                         _dropZoneInGrid.SetActive(false);
                     else 
                         _dropZoneInGrid.SetActive(true);
+
 
                     CurrentDragged = null;
 
@@ -493,7 +492,7 @@ namespace BattleSystem
                         RectangleF rectCursorExtend = ((RectangleF)_rectCursor).Extend(_loop._current);
                         Color color = Color.LawnGreen;
 
-                        if (!CurrentDragged.IsPossibleToDrop)
+                        if (!CurrentDragged.IsPossibleToDrop())
                         {
                             color = Color.OrangeRed;
                         }

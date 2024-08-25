@@ -25,7 +25,8 @@ namespace BattleSystem
         }
         public enum State
         {
-            None = -1,
+            IsNull = -1,
+            IsDragged,
             IsSpawn,
             IsWait,
             IsMove,
@@ -34,16 +35,46 @@ namespace BattleSystem
             IsDead,
             Count
         }
+        private void UpdateState()
+        {
+            switch (_state)
+            {
+                case State.IsNull:
+                    IsNull();
+                    break;
+                case State.IsDragged:
+                    IsDragged();
+                    break;
+                case State.IsSpawn:
+                    IsSpawn();
+                    break;
+                case State.IsWait:
+                    IsWait();
+                    break;
+                case State.IsMove:
+                    IsMove();
+                    break;
+                case State.IsAttack:
+                    IsAttack();
+                    break;
+                case State.IsDamaged:
+                    IsDamaged();
+                    break;
+                case State.IsDead:
+                    IsDead();
+                    break;
+            }
+        }
+        #region Attributes
         public Point MapPosition => _mapPosition;
         public Point Size => _size;
         public Vector2 PrevPosition => _prevPosition;
-        public bool IsPossibleToDrop => _isPossibleToDrop;
         public bool IsDropped => _isDropped;
 
 
         protected TimerEvent _timer;
-        // Statistic of the Unit
-        protected State _state = State.None;
+        // Statistic of the Card
+        protected State _state;
         protected Specs _specs = new();
 
         // Move position
@@ -71,20 +102,21 @@ namespace BattleSystem
         protected int _cellW;
         protected int _cellH;
 
-        protected bool _isDroppable = false;
+        protected bool _isDropZonable = false;
         protected bool _isDropped = true;
-        protected bool _isPossibleToDrop = false;
         protected DropZone _dropZone;
 
         protected Addon.Draggable _draggable;
         protected Addon.Loop _loop;
         protected Shake _shake = new();
 
-        protected float _spawnScale = 0f;
         protected float _ticScale = 0f;
         protected float _tempoScale = 60;
+        protected float _scaleSpawn = 0f;
+        protected float _alphaSpawn = 0f;
 
         protected float _tempoBeforeSpawn = 0f;
+        #endregion
 
         public Card(Arena arena, float tempoBeforeSpawn = 0f) 
         {
@@ -122,7 +154,7 @@ namespace BattleSystem
             //_timer.SetTimer((int)Timer.CheckPath, TimerEvent.Time(0, 0, .02f));
             //_timer.StartTimer((int)Timer.CheckPath);
 
-            SetState(State.None);
+            SetState(State.IsNull);
 
             if (tempoBeforeSpawn == 0)
                 SetState(State.IsSpawn);
@@ -130,37 +162,82 @@ namespace BattleSystem
 
         public override Node Init()
         {
-
             return base.Init();
         }
-        //public Vector2 GetCellSize()
-        //{
-        //    return new Vector2(_cellW, _cellH);
-        //}
-        public void SetDroppable(bool isDroppable)
+        public void SetDropZonable(bool isDropZonable)
         {
-            _isDroppable = isDroppable;
-        }
-        public void SetDropped(bool isDropped)
-        {
-            _isDropped = isDropped;
+            _isDropZonable = isDropZonable;
         }
         public void SetDropZone(DropZone dropZone)
         {
             _dropZone = dropZone;
         }
+        public bool IsPossibleToDrop()
+        {
+            bool isPossibleToDrop = true;
+
+            for (int i = 0; i < _size.X; i++)
+            {
+                for (int j = 0; j < _size.Y; j++)
+                {
+                    var cellOver = _arena.GetCell(_mapPosition.X + i, _mapPosition.Y + j);
+
+                    if (cellOver == null)
+                    {
+                        isPossibleToDrop = false;
+                    }
+
+                    if (cellOver != null)
+                    {
+                        if (cellOver._card != null)
+                        {
+                            isPossibleToDrop = false;
+                        }
+                    }
+                }
+            }
+
+            return isPossibleToDrop;
+        }
         public void SetState(State state)
         {
-            _state = state;
-
+            // Exit State
             switch (_state)
             {
-                case State.None:
+                case State.IsNull:
+                    break;
+
+                case State.IsSpawn:
+                    break;
+
+                case State.IsWait:
+                    break;
+
+                case State.IsMove:
+                    break;
+
+                case State.IsAttack:
+                    break;
+
+                case State.IsDamaged:
+                    break;
+
+                case State.IsDead:
+                    break;
+            }
+
+            // Change to new State
+            _state = state;
+
+            // Enter State
+            switch (_state)
+            {
+                case State.IsNull:
                     _draggable.SetDraggable(false);
                     break;
 
                 case State.IsSpawn:
-                    new FireExplosion().SetPosition(_rect.Center).AppendTo(_arena);
+                    
                     _draggable.SetDraggable(false);
                     break;
 
@@ -173,15 +250,15 @@ namespace BattleSystem
                     break;
 
                 case State.IsAttack:
+                    _draggable.SetDraggable(false);
                     break;
 
                 case State.IsDamaged:
+                    _draggable.SetDraggable(false);
                     break;
 
                 case State.IsDead:
-                    break;
-
-                case State.Count:
+                    _draggable.SetDraggable(false);
                     break;
             }
 
@@ -208,7 +285,6 @@ namespace BattleSystem
             }
 
             _arena.EraseCellCard(this);
-            _arena.SetCellCard(mapDestPosition.X, mapDestPosition.Y, this);
 
             _from = XY;
 
@@ -232,13 +308,13 @@ namespace BattleSystem
 
             SetState(State.IsMove);
         }
-
         public Card SetMapPosition(int mapX, int mapY)
         {
             _mapPosition.X = mapX;
             _mapPosition.Y = mapY;
 
-            UpdatePosition();
+            _x = _mapPosition.X * _cellW;
+            _y = _mapPosition.Y * _cellH;
 
             return this;
         }
@@ -246,17 +322,9 @@ namespace BattleSystem
         {
             _size.X = sizeW;
             _size.Y = sizeH;
-
             SetSize(_size.X * _cellW, _size.Y * _cellH);
-
             return this;        
         }
-        public void UpdatePosition()
-        {
-            _x = _mapPosition.X * _cellW;
-            _y = _mapPosition.Y * _cellH;
-        }
-
         public void OnAttacked(int damage, float intensity = 10f)
         {
             if (_state != State.IsWait)
@@ -286,375 +354,253 @@ namespace BattleSystem
             Game1._soundBlockHit.Play(.5f, 1f, 0f);
             KillMe();
         }
+        #region State Methods
+        protected virtual void IsNull()
+        {
+            if (_timer.OnTimer((int)Timer.BeforeSpawn))
+            {
+                SetState(State.IsSpawn);
+                _ticScale = 0f;
+            }
+        }
+        protected virtual void IsSpawn()
+        {
+            _scaleSpawn = Easing.GetValue(Easing.QuinticEaseOut, _ticScale, 2, 1, _tempoScale);
+            _alphaSpawn = 2 - _scaleSpawn;
+
+            _ticScale++;
+            if (_ticScale >= _tempoScale)
+            {
+                _scaleSpawn = 1;
+
+                SetState(State.IsWait);
+            }
+        }
+        protected virtual void OnDragged()
+        {
+            _isDropped = false;
+            _prevPosition = XY;
+            _prevMapPosition = _mapPosition;
+
+            _arena.EraseCellCard(_mapPosition.X, _mapPosition.Y, this);
+        }
+        protected virtual void IsDragged()
+        {
+            _arena.SetCurrentDragged(this);
+
+            if (_timer.OnTimer((int)Timer.Trail))
+                new Trail(AbsRectF.Center, _size.ToVector2(), .025f, Color.WhiteSmoke).AppendTo(_parent);
+
+            //if (_timer.OnTimer((int)Timer.CheckPath))
+            //{
+            //    // Reset Paths
+            //    if (_paths != null)
+            //    {
+            //        if (_paths.Count > 0)
+            //        {
+            //            for (int i = 0; i < _paths.Count; i++)
+            //            {
+            //                if (_paths[i] != null)
+            //                    if (_paths[i].Count > 0)
+            //                        _paths[i].Clear();
+            //            }
+            //            _paths.Clear();
+            //        }
+            //    }
+
+            //    // AStar Paths
+
+            //    List<Point> _cells = new(); // all cells compose the unit
+            //    for (int i = 0; i < _size.X; i++)
+            //    {
+            //        for (int j = 0; j < _size.Y; j++)
+            //        {
+            //            _cells.Add(new Point(i, j));
+            //        }
+            //    }
+
+            //    for (int pointToSearch = 0; pointToSearch < _cells.Count; pointToSearch++)
+            //    {
+            //        _isCanMove = true;
+
+            //        Point start = _prevMapPosition;
+            //        Point end = _mapPosition;
+            //        if (_arena.IsInMap(start) && _arena.IsInMap(end))
+            //        {
+            //            _paths.Add(new Astar2DList<Cell>(_arena.GetMap(), start, end, Find.Diagonal, 1, false)._path);
+            //        }
+
+            //        for (int i = 0; i < _cells.Count; i++)
+            //        {
+            //            int x = _cells[i].X;
+            //            int y = _cells[i].Y;
+
+            //            if (x == _cells[pointToSearch].X && y == _cells[pointToSearch].Y) // Path to be copied
+            //            {
+
+            //            }
+            //            else // Copy the first path for all Cell of the unit by size
+            //            {
+            //                List<Point> pathCopy = new List<Point>();
+            //                for (int c = 0; c < _paths[0].Count; c++)
+            //                {
+            //                    Point pointCopy = _paths[0][c] + new Point(x,y);
+
+            //                    if (_arena.GetCellUnit(pointCopy) != null)
+            //                        _isCanMove = false;
+
+            //                    pathCopy.Add(pointCopy);
+            //                }
+            //                _paths.Add(pathCopy);
+            //            }
+            //        }
+
+            //        if (_isCanMove)
+            //            break;
+            //    }
+
+
+            //}
+        }
+        protected virtual void OffDragged()
+        {
+            if (_arena._isMouseOverGrid && IsPossibleToDrop() && _isDropZonable)
+            {
+                MoveTo(_dropZone._rect.TopLeft - _parent.XY);
+            }
+            else if(!_arena._isMouseOverGrid && _isDropZonable)
+            {
+                MoveTo(_dropZone._rect.TopLeft - _parent.XY);
+            }
+            else
+            {
+                MoveTo(_prevPosition);
+                _backToPrevPosition = true;
+            }
+        }
+        protected virtual void IsWait()
+        {
+            _backToPrevPosition = false;
+
+            if (_draggable._isDragged)
+            {
+                IsDragged();
+            }
+
+            if (_draggable._onDragged)
+            {
+                OnDragged();
+            }
+
+            if (_draggable._offDragged)
+            {
+                OffDragged();
+            }
+
+        }
+        protected virtual void IsMove()
+        {
+            //Console.WriteLine("IsMove");
+            if (_timer.OnTimer((int)Timer.Trail))
+                new Trail(AbsRectF.Center, _size.ToVector2(), .025f, Color.WhiteSmoke).AppendTo(_parent);
+
+            _x = Easing.GetValue(Easing.QuarticEaseOut, _ticMove, _from.X, _to.X, _tempoMove); // QuadraticEaseOut au lieu de Q***InOut pour eviter bug de détection de la dropZone _isNear car le mouvement est trop rapide a la fin
+            _y = Easing.GetValue(Easing.QuarticEaseOut, _ticMove, _from.Y, _to.Y, _tempoMove);
+
+            _ticMove++;
+            if (_ticMove >= _tempoMove)
+            {
+                Console.WriteLine("FinishMove");
+                _x = _to.X;
+                _y = _to.Y;
+
+                _mapPosition.X = (int)((_x + _cellW / 2) / _cellW);
+                _mapPosition.Y = (int)((_y + _cellH / 2) / _cellH);
+
+                _arena.SetCellCard(_mapPosition.X, _mapPosition.Y, this);
+                
+                _isDropped = true;
+
+                bool playSound = false;
+
+                if (_isDropZonable)
+                {
+                    _isDropZonable = false;
+                    _dropZone.SetContainerNode(this);
+                    playSound = true;
+                }
+
+                if (_backToPrevPosition)
+                {
+                    playSound = true;
+                }
+
+                if (playSound)
+                    Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, 0f);
+
+                SetState(State.IsWait);
+            }
+            else
+            {
+                // Efface les traces de la carte dans l'Arena quand elle bouge toute seule
+                if (!_isDropZonable || !_draggable._isDragged)
+                    _arena.EraseCellCard(_mapPosition.X, _mapPosition.Y, this);
+            }
+        }
+        protected virtual void IsAttack()
+        {
+
+        }
+        protected virtual void IsDamaged()
+        {
+            if (!_shake.IsShake)
+                SetState(State.IsWait);
+        }
+        protected virtual void IsDead()
+        {
+            if (_timer.OnTimer((int)Timer.Death))
+            {
+                //Console.WriteLine("Le est venu !!");
+                new FireExplosion().SetPosition(_rect.Center).AppendTo(_arena);
+                DestroyMe();
+            }
+        }
+        #endregion
         public override Node Update(GameTime gameTime)
         {
-            
-
-            _specs.Update(gameTime);
-            _timer.Update();
             UpdateRect();
-
             _mapPosition.X = (int)Math.Floor((_x+_cellW/2)/_cellW);
             _mapPosition.Y = (int)Math.Floor((_y+_cellH/2)/_cellH);
 
+            _specs.Update(gameTime);
+            _timer.Update();
+
+            if (_specs.Energy <= 0 && _state != State.IsDead)
+            {
+                SetState(State.IsDead);
+                _timer.StartTimer((int)Timer.Death);
+            }
+
             if (_navi._isMouseOver && Game1.MouseControl._onClick && !Game1.MouseControl._isOverAny && !Game1.MouseControl._isActiveReSize)
-            {
                 _parent.GotoFront(_index);
-            }
 
+            if (_isDropped)
+                _arena.SetCellCard(_mapPosition.X, _mapPosition.Y, this);
 
-            switch (_state)
-            {
-                case State.None:
-
-                    if (_timer.OnTimer((int)Timer.BeforeSpawn))
-                    {
-                        SetState(State.IsSpawn);
-                        _ticScale = 0f;
-                    }
-
-                    break;
-
-                case State.IsSpawn:
-
-                    _spawnScale = Easing.GetValue(Easing.QuinticEaseOut, _ticScale, 0, 1, _tempoScale);
-
-                    _ticScale++;
-                    if (_ticScale >= _tempoScale)
-                    {
-                        _spawnScale = 1;
-
-                        SetState(State.IsWait);
-                    }
-
-                    break;
-
-                case State.IsWait:
-
-                    if (_specs.Energy <= 0)
-                    {
-                        SetState(State.IsDead);
-                        _timer.StartTimer((int)Timer.Death);
-                    }
-
-                    // Keep the cell if is dropped and set draggable
-                    //_draggable.SetDraggable(true);
-
-                    if (_isDropped)
-                    {
-                        _arena.SetCellCard(_mapPosition.X, _mapPosition.Y, this);
-                    }
-                    else
-                    {
-                        if (!_draggable._isDragged)
-                        {
-                            _draggable._offDragged = true;
-                        }
-                    }
-
-                    if (_draggable._isDragged)
-                    {
-                        _arena.SetCurrentDragged(this);
-                        // test si l'unit dragué est le même unit dans la case , si oui on enlève l'unit de la case
-                        var cellOver = _arena.GetCell(_mapPosition.X, _mapPosition.Y);
-
-                        // Test si l'unité est sur ces traces, si oui il efface
-                        if (cellOver != null)
-                            if (cellOver._card != null)
-                            {
-                                if (_arena.CurrentDragged._index == cellOver._card._index)
-                                {
-                                    _arena.EraseCellCard(_mapPosition.X, _mapPosition.Y, cellOver._card);
-                                }
-                            }
-
-
-                        //check if Unit can be dropped
-                        _isPossibleToDrop = true;
-
-                        for (int i = 0; i < _size.X; i++)
-                        {
-                            for (int j = 0; j < _size.Y; j++)
-                            {
-                                cellOver = _arena.GetCell(_mapPosition.X + i, _mapPosition.Y + j);
-
-                                if (cellOver == null)
-                                {
-                                    _isPossibleToDrop = false;
-                                }
-
-                                if (cellOver != null)
-                                {
-                                    if (cellOver._card != null)
-                                    {
-                                        _isPossibleToDrop = false;
-                                    }
-                                }
-                            }
-                        }
-
-                        if (_timer.OnTimer((int)Timer.Trail))
-                            new Trail(AbsRectF.Center, _size.ToVector2(), .025f, Color.WhiteSmoke).AppendTo(_parent);
-
-                        //if (_timer.OnTimer((int)Timer.CheckPath))
-                        //{
-                        //    // Reset Paths
-                        //    if (_paths != null)
-                        //    {
-                        //        if (_paths.Count > 0)
-                        //        {
-                        //            for (int i = 0; i < _paths.Count; i++)
-                        //            {
-                        //                if (_paths[i] != null)
-                        //                    if (_paths[i].Count > 0)
-                        //                        _paths[i].Clear();
-                        //            }
-                        //            _paths.Clear();
-                        //        }
-                        //    }
-
-                        //    // AStar Paths
-
-                        //    List<Point> _cells = new(); // all cells compose the unit
-                        //    for (int i = 0; i < _size.X; i++)
-                        //    {
-                        //        for (int j = 0; j < _size.Y; j++)
-                        //        {
-                        //            _cells.Add(new Point(i, j));
-                        //        }
-                        //    }
-
-                        //    for (int pointToSearch = 0; pointToSearch < _cells.Count; pointToSearch++)
-                        //    {
-                        //        _isCanMove = true;
-
-                        //        Point start = _prevMapPosition;
-                        //        Point end = _mapPosition;
-                        //        if (_arena.IsInMap(start) && _arena.IsInMap(end))
-                        //        {
-                        //            _paths.Add(new Astar2DList<Cell>(_arena.GetMap(), start, end, Find.Diagonal, 1, false)._path);
-                        //        }
-
-                        //        for (int i = 0; i < _cells.Count; i++)
-                        //        {
-                        //            int x = _cells[i].X;
-                        //            int y = _cells[i].Y;
-
-                        //            if (x == _cells[pointToSearch].X && y == _cells[pointToSearch].Y) // Path to be copied
-                        //            {
-
-                        //            }
-                        //            else // Copy the first path for all Cell of the unit by size
-                        //            {
-                        //                List<Point> pathCopy = new List<Point>();
-                        //                for (int c = 0; c < _paths[0].Count; c++)
-                        //                {
-                        //                    Point pointCopy = _paths[0][c] + new Point(x,y);
-
-                        //                    if (_arena.GetCellUnit(pointCopy) != null)
-                        //                        _isCanMove = false;
-
-                        //                    pathCopy.Add(pointCopy);
-                        //                }
-                        //                _paths.Add(pathCopy);
-                        //            }
-                        //        }
-
-                        //        if (_isCanMove)
-                        //            break;
-                        //    }
-
-
-                        //}
-
-
-                    }
-
-                    _backToPrevPosition = false;
-
-                    if (_draggable._offDragged)
-                    {
-                        //Console.Write("<unit offDrag>");
-
-                        if (_arena._isMouseOverGrid)
-                        {
-                            Cell cellOver = null;
-
-                            _isPossibleToDrop = true;
-
-                            // If unit is out of arena isPossibleToDrop is false!
-                            if (!_arena._isMouseOverGrid)
-                                _isPossibleToDrop = false;
-
-                            // check all cells compose the unit size if another unit occuped the cells
-                            for (int i = 0; i < _size.X; i++)
-                            {
-                                for (int j = 0; j < _size.Y; j++)
-                                {
-                                    cellOver = _arena.GetCell(_mapPosition.X + i, _mapPosition.Y + j);
-
-                                    if (cellOver == null)
-                                    {
-                                        //Console.Write("<GET CELL NULL>");
-                                        _isPossibleToDrop = false;
-                                    }
-
-                                    if (cellOver != null)
-                                    {
-                                        if (cellOver._card != null)
-                                        {
-                                            //Console.WriteLine("Trouve un cell occupé déjà");
-                                            _isPossibleToDrop = false;
-                                        }
-                                    }
-                                }
-                            }
-
-
-                            if (_isPossibleToDrop) // Unit move to goal when isPossibleToDrop is true
-                            {
-                                if (_isDroppable && cellOver._card == null)
-                                {
-                                    MoveTo(_dropZone._rect.TopLeft - _parent.XY);
-                                    //SetState(State.MOVE);
-                                }
-                            }
-                            else // Come back to previous position if not possible to drop
-                            {
-                                if (Misc.PointInRect(_prevPosition, _arena.AbsRectF))
-                                {
-                                    //Vector2 prevPosition = new Vector2(_prevMapX * _cellW, _prevMapY * _cellH);
-                                    Vector2 prevPosition = _prevMapPosition.ToVector2() * _cellW;
-
-                                    MoveTo(prevPosition);
-                                    _backToPrevPosition = true;
-                                }
-                                else
-                                {
-                                    MoveTo(_prevPosition);
-                                    _backToPrevPosition = true;
-                                }
-                            }
-
-                        }
-                        else
-                        {
-                            if (_isDroppable)
-                            {
-                                MoveTo(_dropZone._rect.TopLeft - _parent.XY);
-                            }
-                            else
-                            {
-                                MoveTo(_prevPosition);
-                                _backToPrevPosition = true;
-                            }
-                        }
-
-                    }
-
-                    if (_draggable._onDragged)
-                    {
-                        _isDropped = false;
-
-                        _prevPosition = XY;
-                        _prevMapPosition = _mapPosition;
-                    }
-
-                    break;
-
-                case State.IsMove:
-
-                    if (_timer.OnTimer((int)Timer.Trail))
-                        new Trail(AbsRectF.Center, _size.ToVector2(), .025f, Color.WhiteSmoke).AppendTo(_parent);
-
-                    //_draggable.SetDraggable(false);
-
-                    _x = Easing.GetValue(Easing.QuarticEaseOut, _ticMove, _from.X, _to.X, _tempoMove); // QuadraticEaseOut au lieu de Q***InOut pour eviter bug de détection de la dropZone _isNear car le mouvement est trop rapide a la fin
-                    _y = Easing.GetValue(Easing.QuarticEaseOut, _ticMove, _from.Y, _to.Y, _tempoMove);
-
-                    _ticMove++;
-                    if (_ticMove >= _tempoMove)
-                    {
-                        _x = _to.X;
-                        _y = _to.Y;
-
-                        _mapPosition.X = (int)((_x + _cellW / 2) / _cellW);
-                        _mapPosition.Y = (int)((_y + _cellH / 2) / _cellH);
-
-                        //_arena.SetCellUnit(_mapPosition.X, _mapPosition.Y, this);
-
-                        bool playSound = false;
-
-                        if (_isDroppable)
-                        {
-                            _isDroppable = false;
-                            _isDropped = true;
-
-                            _dropZone.SetNearNode(this);
-                            _dropZone.SetContainerNode(this);
-                            //Console.WriteLine("DropZone ContainedNode Affected !");
-                            playSound = true;
-                        }
-
-                        if (_backToPrevPosition)
-                        {
-                            _isDropped = true;
-                            playSound = true;
-                        }
-
-                        if (playSound)
-                            Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, 0f);
-
-                        SetState(State.IsWait);
-                    }
-                    else
-                    {
-                        // Efface les traces de la carte dans l'Arena quand elle bouge toute seule
-                        if (!_isDroppable || !_draggable._isDragged)
-                            _arena.EraseCellCard(_mapPosition.X, _mapPosition.Y, this);
-                    }
-                    break;
-
-                case State.IsAttack:
-                    break;
-
-                case State.IsDamaged:
-
-                    _draggable.SetDraggable(false);
-
-                    if (!_shake.IsShake)
-                        SetState(State.IsWait);
-
-                    break;
-               
-                case State.IsDead:
-
-                    _draggable.SetDraggable(false);
-
-                    if (_timer.OnTimer((int)Timer.Death))
-                    {
-                        //Console.WriteLine("Le est venu !!");
-                        DestroyMe();
-                    }
-                    
-                    break;
-
-                default:
-                    break;
-
-            }
+            UpdateState();
 
             return base.Update(gameTime);
         }
         public override Node Draw(SpriteBatch batch, GameTime gameTime, int indexLayer)
         {
-            if (_state == State.None) 
+            if (_state == State.IsNull) 
                 return this;
 
             if (indexLayer == (int)Layers.Main)
             {
-                //GFX.FillRectangle(batch, AbsRectF.Extend(-4), Color.Black * .8f);
-                var canvas = GFX.FillRectangleCentered(batch, AbsRectF.Center, AbsRectF.GetSize() * _spawnScale, Color.Black *.8f * _spawnScale, _loop._current);
+                GFX.FillRectangle(batch, AbsRectF.Extend(-4), Color.Black * .8f);
+                //var canvas = GFX.FillRectangleCentered(batch, AbsRectF.Center, AbsRectF.GetSize() * _scaleSpawn, Color.Black *.4f * _alphaSpawn, _loop._current);
+                var canvas = RectangleF.GetRectangleCentered(AbsRectF.Center, AbsRectF.GetSize() * _scaleSpawn);
 
                 if (_draggable._isDragged)
                 {
@@ -676,7 +622,7 @@ namespace BattleSystem
 
                 if (_state == State.IsDead) color = Color.Red;
 
-                GFX.Draw(batch, tex, color * (_arena.IsCardInMap(this, Point.Zero)?1f:.75f) * _spawnScale, _loop._current, AbsXY + (tex.Bounds.Size.ToVector2()/2) + _shake.GetVector2(), Position.CENTER, Vector2.One * _spawnScale);
+                GFX.Draw(batch, tex, color * (_arena.IsCardInMap(this, Point.Zero)?1f:.75f) * _alphaSpawn, _loop._current, AbsXY + (tex.Bounds.Size.ToVector2()/2) + _shake.GetVector2(), Position.CENTER, Vector2.One * _scaleSpawn);
 
 
                 //if (_isDroppable)
@@ -696,20 +642,20 @@ namespace BattleSystem
                 // Show Stats
                 //if (_state != State.IsSpawn)
                 {
-                    GFX.Bar(batch, canvas.TopCenter + Vector2.UnitY * 2 - Vector2.UnitX * (_specs.MaxEnergy / 2) + _shake.GetVector2() * .5f, _specs.MaxEnergy, 8, Color.Red * _spawnScale);
-                    GFX.Bar(batch, canvas.TopCenter + Vector2.UnitY * 2 - Vector2.UnitX * (_specs.MaxEnergy / 2) + _shake.GetVector2() * .5f, _specs.Energy, 8, fg * _spawnScale);
-                    GFX.BarLines(batch, canvas.TopCenter + Vector2.UnitY * 2 - Vector2.UnitX * (_specs.MaxEnergy / 2) + _shake.GetVector2() * .5f, _specs.MaxEnergy, 8, Color.Black * _spawnScale, 2);
+                    GFX.Bar(batch, canvas.TopCenter + Vector2.UnitY * 2 - Vector2.UnitX * (_specs.MaxEnergy / 2) + _shake.GetVector2() * .5f, _specs.MaxEnergy, 8, Color.Red * _alphaSpawn);
+                    GFX.Bar(batch, canvas.TopCenter + Vector2.UnitY * 2 - Vector2.UnitX * (_specs.MaxEnergy / 2) + _shake.GetVector2() * .5f, _specs.Energy, 8, fg * _alphaSpawn);
+                    GFX.BarLines(batch, canvas.TopCenter + Vector2.UnitY * 2 - Vector2.UnitX * (_specs.MaxEnergy / 2) + _shake.GetVector2() * .5f, _specs.MaxEnergy, 8, Color.Black * _alphaSpawn, 2);
 
-                    GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_specs.Energy}", canvas.TopLeft + Vector2.One * 20 + _shake.GetVector2() * .5f, fg * _spawnScale, bg * _spawnScale);
-                    GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_specs.Mana}", canvas.TopRight - Vector2.UnitX * 20 + Vector2.UnitY * 20, Color.MediumSlateBlue * _spawnScale, Color.DarkBlue * _spawnScale);
-                    GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_specs.PowerAttack}", canvas.BottomLeft + Vector2.UnitX * 20 - Vector2.UnitY * 20, Color.Yellow * _spawnScale, Color.Red * _spawnScale);
+                    GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_specs.Energy}", canvas.TopLeft + Vector2.One * 20 + _shake.GetVector2() * .5f, fg * _alphaSpawn, bg * _alphaSpawn);
+                    GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_specs.Mana}", canvas.TopRight - Vector2.UnitX * 20 + Vector2.UnitY * 20, Color.MediumSlateBlue * _alphaSpawn, Color.DarkBlue * _alphaSpawn);
+                    GFX.CenterBorderedStringXY(batch, Game1._fontMain2, $"{_specs.PowerAttack}", canvas.BottomLeft + Vector2.UnitX * 20 - Vector2.UnitY * 20, Color.Yellow * _alphaSpawn, Color.Red * _alphaSpawn);
                 }
 
             }
 
             if (indexLayer == (int)Layers.Debug)
             {
-                GFX.CenterStringXY(batch, Game1._fontMain, $"{_mapPosition}\n{_isDropped}\n{_state}\n{_type}\n{_subType}", AbsRectF.BottomCenter, Color.Yellow);
+                GFX.CenterStringXY(batch, Game1._fontMain, $"{_mapPosition}\n isDropped={_isDropped}\n{_state}\n{_type}\n{_subType}", AbsRectF.BottomCenter, Color.Yellow);
 
                 //if (_paths != null && _draggable._isDragged)
                 //    if (_paths.Count > 0)
@@ -769,6 +715,7 @@ namespace BattleSystem
 
             return base.Draw(batch, gameTime, indexLayer);
         }
+
 
     }
 }

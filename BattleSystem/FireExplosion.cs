@@ -10,15 +10,15 @@ namespace BattleSystem
     {
         AnimatedSprite _sprite;
 
-        public FireExplosion()
+        public FireExplosion(float scale = 4f)
         {
             _sprite = Game1._spriteSheetFireExplosion.CreateAnimatedSprite("FireExplosion");
             _sprite.Speed = 1.5f;
 
             //_spriteSlash.Color = Color.White;
             //var origin = _spriteSlash.CurrentFrame.TextureRegion.GetSlice("Slice1").Origin;
-            _sprite.ScaleX = 4f;
-            _sprite.ScaleY = 4f;
+            _sprite.ScaleX = scale;
+            _sprite.ScaleY = scale;
             _sprite.Origin = new Vector2(_sprite.Width / 2, _sprite.Height / 2);
             //_spriteSlash.Origin = origin;
             _sprite.Play(1);

@@ -33,7 +33,7 @@ namespace BattleSystem
 
         Node _layerGui;
 
-        FireCamp _fireCamp;
+        //FireCamp _fireCamp;
 
         public ScreenPlay(Game1 game) 
         { 
@@ -67,7 +67,9 @@ namespace BattleSystem
                 .SetPosition(160, Game1.ScreenH - 40)
                 .AppendTo(_layerGui);
 
-            _fireCamp = (FireCamp)new FireCamp().SetPosition(50,80).AppendTo(this);
+            //_fireCamp = (FireCamp)new FireCamp()
+            //    .SetPosition(50,80)
+            //    .AppendTo(this);
 
         }
         public override Node Init()
@@ -79,7 +81,7 @@ namespace BattleSystem
             _arena.AddCard(7, 1, 2, 2);
             _arena.AddCard(5, 4, 2, 3);
 
-            for (int i = 0; i < 20; i++)
+            for (int i = 0; i < 10; i++)
             {
                 int x, y;
 
@@ -89,7 +91,7 @@ namespace BattleSystem
                     y = Misc.Rng.Next(0, ArenaH);
 
                 //} while (!_arena.AddCard(x, y, 1, 1));
-                } while (!_arena.AddCard(x, y, new Unit1x1(_arena, TimerEvent.Time(0, 0, .1f * i))));
+                } while (!_arena.AddCard(x, y, new Unit1x1(_arena, TimerEvent.Time(0, 0, .05f * i))));
 
             }
 
@@ -144,7 +146,7 @@ namespace BattleSystem
         {
             HandleInput(gameTime);
 
-            _fireCamp.SetPosition(Game1.MouseControl.GetPosition().ToVector2());
+            //_fireCamp.SetPosition(Game1.MouseControl.GetPosition().ToVector2());
 
             UpdateChilds(gameTime);
 
