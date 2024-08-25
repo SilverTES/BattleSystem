@@ -18,10 +18,11 @@ namespace BattleSystem
             Phase_Player,
             Phase_Enemy,
             Transition,
-            LAST
+            Count,
         }
 
         States _state = States.Phase_Player;
+        public States State { get { return _state; } }
 
         public Card CurrentDragged { get; private set; }
         int _mapW;
@@ -87,9 +88,51 @@ namespace BattleSystem
             _dropZoneInGrid.Show(false);
 
         }
+        private void ExitState()
+        {
+            switch (_state)
+            {
+                case States.Phase_Player:
+                    break;
+                case States.Phase_Enemy:
+                    break;
+                case States.Transition:
+                    break;
+                case States.Count:
+                    break;
+                default:
+                    break;
+            }
+        }
+        private void EnterState()
+        {
+            switch (_state)
+            {
+                case States.Phase_Player:
+                    break;
+                case States.Phase_Enemy:
+                    foreach (var node in GroupOf(UID.Get<Card>()))
+                    {
+                        Card card = node.This<Card>();
+                        card.SetState(Card.States.IsWait);
+                    }
+                    break;
+                case States.Transition:
+                    break;
+                case States.Count:
+                    break;
+                default:
+                    break;
+            }
+        }
         public void SetState(States state)
         {
+            // Exit previous state
+            ExitState();
+            // change state to new state
             _state = state;
+            // Enter new state
+            EnterState();
         }
         public Vector2 GetMouse()
         {
@@ -397,20 +440,21 @@ namespace BattleSystem
 
                     // Manage Drag & Drop Zone
                     //if (_isMouseOverGrid && Game1.MouseControl._down)
-                    {
+                    //{
 
-                        if (CurrentDragged != null)
-                            _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(CurrentDragged._rect.Width, CurrentDragged._rect.Height));
-                        else
-                            _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(_cellW, _cellH));
-                                                
-                        //if (_prevRectCursor != _rectCursor)
-                        //    Game1._soundClock.Play(0.5f, 1f, .5f);
+                    if (CurrentDragged != null)
+                        _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(CurrentDragged._rect.Width, CurrentDragged._rect.Height));
+                    else
+                        _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(_cellW, _cellH));
 
-                        _prevRectCursor = _rectCursor;
+                    //if (_prevRectCursor != _rectCursor)
+                    //    Game1._soundClock.Play(0.5f, 1f, .5f);
 
-                        _dropZoneInGrid.UpdateZone(_rectCursor, -10);
-                    }
+                    _prevRectCursor = _rectCursor;
+
+                    _dropZoneInGrid.UpdateZone(_rectCursor, -10);
+
+                    //}
 
 
                     if (!_isMouseOverGrid && !Game1.MouseControl._isActiveDrag && CurrentDragged != null)
@@ -436,20 +480,20 @@ namespace BattleSystem
                     //    }
                     //}
 
-
-
                     break;
                 case States.Phase_Enemy:
 
-
-                    break;
-                case States.LAST:
+                    SortZAscending();
+                    UpdateChildsSort(gameTime);
+                    UpdateCells();
 
                     break;
                 case States.Transition:
 
-                    break;
-                default:
+                    SortZAscending();
+                    UpdateChildsSort(gameTime);
+                    UpdateCells();
+
                     break;
             }
 

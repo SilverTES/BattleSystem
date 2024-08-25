@@ -17,6 +17,8 @@ namespace BattleSystem
         public int RangeAttack = 10;
 
         int _damage = 10;
+
+        public bool OffDamage = false;
         
         Animate _animate = new();
         public Specs() 
@@ -47,6 +49,8 @@ namespace BattleSystem
 
         public void Update(GameTime gameTime) 
         {
+            OffDamage = false;
+
             if (_animate.IsPlay())
             {
                 Energy = (int)_animate.Value();
@@ -55,6 +59,7 @@ namespace BattleSystem
             if (_animate.Off("damage"))
             {
                 //Console.WriteLine("setdamage finish !");
+                OffDamage = true;
             }
 
 

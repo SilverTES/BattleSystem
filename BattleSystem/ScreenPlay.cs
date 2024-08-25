@@ -78,6 +78,7 @@ namespace BattleSystem
 
             InitChilds();
 
+            Card.ResetZIndexCard();
             _arena.AddCard(7, 1, 2, 2);
             _arena.AddCard(5, 4, 2, 3);
 
@@ -105,12 +106,12 @@ namespace BattleSystem
 
                 //_chainGrid.Init();
                 //Game1.Quit();
-                _arena.SetState(Arena.States.Transition);
+                _arena.SetState(Arena.States.Phase_Enemy);
             }
 
             if (_btnRoll._navi._onClick)
             {
-                //Console.WriteLine("ScreenPlay.Init");
+                Misc.Log("ScreenPlay.Init");
                 Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, .5f);
                 Init();
                 _arena.SetState(Arena.States.Phase_Player);

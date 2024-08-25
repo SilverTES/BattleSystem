@@ -23,11 +23,11 @@ namespace BattleSystem
             //CheckPath,
             Count
         }
-        public enum State
+        public enum States
         {
             IsNull = -1,
-            IsDragged,
             IsSpawn,
+            IsPlay,
             IsWait,
             IsMove,
             IsAttack,
@@ -35,36 +35,7 @@ namespace BattleSystem
             IsDead,
             Count
         }
-        private void UpdateState()
-        {
-            switch (_state)
-            {
-                case State.IsNull:
-                    IsNull();
-                    break;
-                case State.IsDragged:
-                    IsDragged();
-                    break;
-                case State.IsSpawn:
-                    IsSpawn();
-                    break;
-                case State.IsWait:
-                    IsWait();
-                    break;
-                case State.IsMove:
-                    IsMove();
-                    break;
-                case State.IsAttack:
-                    IsAttack();
-                    break;
-                case State.IsDamaged:
-                    IsDamaged();
-                    break;
-                case State.IsDead:
-                    IsDead();
-                    break;
-            }
-        }
+
         #region Attributes
         public Point MapPosition => _mapPosition;
         public Point Size => _size;
@@ -74,7 +45,8 @@ namespace BattleSystem
 
         protected TimerEvent _timer;
         // Statistic of the Card
-        protected State _state;
+        protected States _state;
+        protected States _prevState;
         protected Specs _specs = new();
 
         // Move position
@@ -120,7 +92,10 @@ namespace BattleSystem
         static float _zIndexCard = 0;
         #endregion
 
-
+        public static void ResetZIndexCard()
+        {
+            _zIndexCard = 0;
+        }
         public Card(Arena arena, float tempoBeforeSpawn = 0f) 
         {
             _z = _zIndexCard++;
@@ -159,10 +134,10 @@ namespace BattleSystem
             //_timer.SetTimer((int)Timer.CheckPath, TimerEvent.Time(0, 0, .02f));
             //_timer.StartTimer((int)Timer.CheckPath);
 
-            SetState(State.IsNull);
+            SetState(States.IsNull);
 
             if (tempoBeforeSpawn == 0)
-                SetState(State.IsSpawn);
+                SetState(States.IsSpawn);
         }
 
         public override Node Init()
@@ -204,73 +179,90 @@ namespace BattleSystem
 
             return isPossibleToDrop;
         }
-        public void SetState(State state)
+        protected virtual void ExitState()
         {
-            // Exit State
             switch (_state)
             {
-                case State.IsNull:
+                case States.IsNull:
                     break;
 
-                case State.IsSpawn:
+                case States.IsSpawn:
                     break;
 
-                case State.IsWait:
+                case States.IsPlay:
                     break;
 
-                case State.IsMove:
+                case States.IsWait:
                     break;
 
-                case State.IsAttack:
+                case States.IsMove:
                     break;
 
-                case State.IsDamaged:
+                case States.IsAttack:
                     break;
 
-                case State.IsDead:
+                case States.IsDamaged:
+                    break;
+
+                case States.IsDead:
                     break;
             }
-
-            // Change to new State
-            _state = state;
-
-            // Enter State
+        }
+        protected virtual void EnterState()
+        {
             switch (_state)
             {
-                case State.IsNull:
+                case States.IsNull:
                     _draggable.SetDraggable(false);
                     break;
 
-                case State.IsSpawn:
+                case States.IsSpawn:
                     
                     _draggable.SetDraggable(false);
                     break;
 
-                case State.IsWait:
+                case States.IsPlay:
                     _draggable.SetDraggable(true);
                     break;
 
-                case State.IsMove:
+                case States.IsWait:
                     _draggable.SetDraggable(false);
                     break;
 
-                case State.IsAttack:
+                case States.IsMove:
                     _draggable.SetDraggable(false);
                     break;
 
-                case State.IsDamaged:
+                case States.IsAttack:
                     _draggable.SetDraggable(false);
                     break;
 
-                case State.IsDead:
+                case States.IsDamaged:
+                    _draggable.SetDraggable(false);
+                    break;
+
+                case States.IsDead:
                     _draggable.SetDraggable(false);
                     break;
             }
-
+        }
+        public void SetState(States state)
+        {
+            // Exit State
+            ExitState();
+            // Change to new State
+            _prevState = _state;
+            _state = state;
+            // Enter State
+            EnterState();
+        }
+        public void BackState()
+        {
+            SetState(_prevState);
         }
         public bool MoveToStep(Point mapStep, int durationMove = 6) // true if move possible
         {
-            if (!_arena.IsCardInMap(this, mapStep) || _state == State.IsMove)
+            if (!_arena.IsCardInMap(this, mapStep) || _state == States.IsMove)
                 return false;
 
             Point mapDestPosition = _mapPosition + mapStep;
@@ -299,7 +291,7 @@ namespace BattleSystem
             _ticMove = 0;
             _tempoMove = durationMove;
 
-            SetState(State.IsMove);
+            SetState(States.IsMove);
 
             return true;
         }
@@ -311,7 +303,7 @@ namespace BattleSystem
             _ticMove = 0;
             _tempoMove = durationMove;
 
-            SetState(State.IsMove);
+            SetState(States.IsMove);
         }
         public Card SetMapPosition(int mapX, int mapY)
         {
@@ -332,7 +324,7 @@ namespace BattleSystem
         }
         public void OnAttacked(int damage, float intensity = 10f)
         {
-            if (_state != State.IsWait)
+            if (_state != States.IsPlay)
                 return;
 
             _shake.SetIntensity(intensity, .25f);
@@ -347,7 +339,7 @@ namespace BattleSystem
                 .SetPosition(_rect.TopCenter)
                 .AppendTo(_parent);
 
-            SetState(State.IsDamaged);
+            SetState(States.IsDamaged);
             Game1._soundSword.Play(.25f, 1f, 0f);
 
             new Slash().SetPosition(_rect.Center).AppendTo(_parent);
@@ -359,31 +351,10 @@ namespace BattleSystem
             Game1._soundBlockHit.Play(.5f, 1f, 0f);
             KillMe();
         }
-        #region State Methods
-        protected virtual void IsNull()
+        #region Dragged Methods
+        private void OnDragged()
         {
-            if (_timer.OnTimer((int)Timer.BeforeSpawn))
-            {
-                SetState(State.IsSpawn);
-                _ticScale = 0f;
-            }
-        }
-        protected virtual void IsSpawn()
-        {
-            _scaleSpawn = Easing.GetValue(Easing.QuinticEaseOut, _ticScale, 2, 1, _tempoScale);
-            _alphaSpawn = 2 - _scaleSpawn;
-
-            _ticScale++;
-            if (_ticScale >= _tempoScale)
-            {
-                _scaleSpawn = 1;
-
-                SetState(State.IsWait);
-            }
-        }
-        protected virtual void OnDragged()
-        {
-            //Console.WriteLine($"OnDragged {_index} GOTO FRONT");
+            Misc.Log($"OnDragged {_index} GOTO FRONT");
             _arena.GotoFront(_index, UID.Get<Card>());
 
             _isDropped = false;
@@ -392,7 +363,7 @@ namespace BattleSystem
 
             _arena.EraseCellCard(_mapPosition.X, _mapPosition.Y, this);
         }
-        protected virtual void IsDragged()
+        private void IsDragged()
         {
             _arena.SetCurrentDragged(this);
 
@@ -470,7 +441,7 @@ namespace BattleSystem
 
             //}
         }
-        protected virtual void OffDragged()
+        private void OffDragged()
         {
             if (_arena._isMouseOverGrid && IsPossibleToDrop() && _isDropZonable)
             {
@@ -486,111 +457,140 @@ namespace BattleSystem
                 _backToPrevPosition = true;
             }
         }
-        protected virtual void IsWait()
-        {
-            _backToPrevPosition = false;
-
-            if (_draggable._isDragged)
-            {
-                IsDragged();
-            }
-
-            if (_draggable._onDragged)
-            {
-                OnDragged();
-            }
-
-            if (_draggable._offDragged)
-            {
-                OffDragged();
-            }
-
-        }
-        protected virtual void IsMove()
-        {
-            //Console.WriteLine("IsMove");
-            if (_timer.OnTimer((int)Timer.Trail))
-                new Trail(AbsRectF.Center, _size.ToVector2(), .025f, Color.WhiteSmoke).AppendTo(_parent);
-
-            _x = Easing.GetValue(Easing.QuarticEaseOut, _ticMove, _from.X, _to.X, _tempoMove); // QuadraticEaseOut au lieu de Q***InOut pour eviter bug de détection de la dropZone _isNear car le mouvement est trop rapide a la fin
-            _y = Easing.GetValue(Easing.QuarticEaseOut, _ticMove, _from.Y, _to.Y, _tempoMove);
-
-            _ticMove++;
-            if (_ticMove >= _tempoMove)
-            {
-                Console.WriteLine("FinishMove");
-                _x = _to.X;
-                _y = _to.Y;
-
-                _mapPosition.X = (int)((_x + _cellW / 2) / _cellW);
-                _mapPosition.Y = (int)((_y + _cellH / 2) / _cellH);
-
-                _arena.SetCellCard(_mapPosition.X, _mapPosition.Y, this);
-                
-                _isDropped = true;
-
-                bool playSound = false;
-
-                if (_isDropZonable)
-                {
-                    _isDropZonable = false;
-                    _dropZone.SetContainerNode(this);
-                    playSound = true;
-                }
-
-                if (_backToPrevPosition)
-                {
-                    playSound = true;
-                }
-
-                if (playSound)
-                    Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, 0f);
-
-                SetState(State.IsWait);
-            }
-            else
-            {
-                // Efface les traces de la carte dans l'Arena quand elle bouge toute seule
-                if (!_isDropZonable || !_draggable._isDragged)
-                    _arena.EraseCellCard(_mapPosition.X, _mapPosition.Y, this);
-            }
-        }
-        protected virtual void IsAttack()
-        {
-
-        }
-        protected virtual void IsDamaged()
-        {
-            if (!_shake.IsShake)
-                SetState(State.IsWait);
-        }
-        protected virtual void IsDead()
-        {
-            if (_timer.OnTimer((int)Timer.Death))
-            {
-                //Console.WriteLine("Le est venu !!");
-                new FireExplosion().SetPosition(_rect.Center).AppendTo(_arena);
-                DestroyMe();
-            }
-        }
         #endregion
+        protected virtual void UpdateState()
+        {
+            switch (_state)
+            {
+                case States.IsNull:
+
+                    if (_timer.OnTimer((int)Timer.BeforeSpawn))
+                    {
+                        SetState(States.IsSpawn);
+                        _ticScale = 0f;
+                    }
+                    break;
+
+                case States.IsSpawn:
+
+                    _scaleSpawn = Easing.GetValue(Easing.QuinticEaseOut, _ticScale, 2, 1, _tempoScale);
+                    _alphaSpawn = 2 - _scaleSpawn;
+
+                    _ticScale++;
+                    if (_ticScale >= _tempoScale)
+                    {
+                        _scaleSpawn = 1;
+
+                        SetState(States.IsPlay);
+                    }
+                    break;
+
+                case States.IsPlay:
+
+                    _backToPrevPosition = false;
+
+                    if (_draggable._isDragged)
+                    {
+                        IsDragged();
+                    }
+
+                    if (_draggable._onDragged)
+                    {
+                        OnDragged();
+                    }
+
+                    if (_draggable._offDragged)
+                    {
+                        OffDragged();
+                    }
+                    break;
+                case States.IsWait:
+
+                    break;
+
+                case States.IsMove:
+
+                    //Console.WriteLine("IsMove");
+                    if (_timer.OnTimer((int)Timer.Trail))
+                        new Trail(AbsRectF.Center, _size.ToVector2(), .025f, Color.WhiteSmoke).AppendTo(_parent);
+
+                    _x = Easing.GetValue(Easing.QuarticEaseOut, _ticMove, _from.X, _to.X, _tempoMove); // QuadraticEaseOut au lieu de Q***InOut pour eviter bug de détection de la dropZone _isNear car le mouvement est trop rapide a la fin
+                    _y = Easing.GetValue(Easing.QuarticEaseOut, _ticMove, _from.Y, _to.Y, _tempoMove);
+
+                    _ticMove++;
+                    if (_ticMove >= _tempoMove)
+                    {
+                        Misc.Log("..FinishMove..");
+
+                        _x = _to.X;
+                        _y = _to.Y;
+
+                        _mapPosition.X = (int)((_x + _cellW / 2) / _cellW);
+                        _mapPosition.Y = (int)((_y + _cellH / 2) / _cellH);
+
+                        _arena.SetCellCard(_mapPosition.X, _mapPosition.Y, this);
+
+                        _isDropped = true;
+
+                        if (_isDropZonable)
+                        {
+                            _isDropZonable = false;
+                            _dropZone.SetContainerNode(this);
+                        }
+
+                        if (_backToPrevPosition)
+                        {
+
+                        }
+
+                        Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, 0f);
+
+                        BackState();
+                    }
+                    else
+                    {
+                        // Efface les traces de la carte dans l'Arena quand elle bouge toute seule
+                        if (!_isDropZonable || !_draggable._isDragged)
+                            _arena.EraseCellCard(_mapPosition.X, _mapPosition.Y, this);
+                    }
+                    break;
+
+                case States.IsAttack:
+                    break;
+
+                case States.IsDamaged:
+
+                    if (!_shake.IsShake)// && _specs.OffDamage)
+                        BackState();
+
+                    break;
+
+                case States.IsDead:
+
+                    if (_timer.OnTimer((int)Timer.Death))
+                    {
+                        //Console.WriteLine("Le est venu !!");
+                        new FireExplosion().SetPosition(_rect.Center).AppendTo(_arena);
+                        DestroyMe();
+                    }
+                    break;
+            }
+        }
         public override Node Update(GameTime gameTime)
         {
             UpdateRect();
+
             _mapPosition.X = (int)Math.Floor((_x+_cellW/2)/_cellW);
             _mapPosition.Y = (int)Math.Floor((_y+_cellH/2)/_cellH);
 
             _specs.Update(gameTime);
             _timer.Update();
 
-            if (_specs.Energy <= 0 && _state != State.IsDead)
+            if (_specs.Energy <= 0 && _state != States.IsDead)
             {
-                SetState(State.IsDead);
+                SetState(States.IsDead);
                 _timer.StartTimer((int)Timer.Death);
             }
-
-            //if (_navi._isMouseOver && Game1.MouseControl._onClick && !Game1.MouseControl._isOverAny && !Game1.MouseControl._isActiveReSize)
-                //_arena.GotoFront(_index);
 
             if (_isDropped)
                 _arena.SetCellCard(_mapPosition.X, _mapPosition.Y, this);
@@ -601,7 +601,7 @@ namespace BattleSystem
         }
         public override Node Draw(SpriteBatch batch, GameTime gameTime, int indexLayer)
         {
-            if (_state == State.IsNull) 
+            if (_state == States.IsNull) 
                 return this;
 
             if (indexLayer == (int)Layers.Main)
@@ -625,10 +625,10 @@ namespace BattleSystem
 
                 Color color = Color.White;
 
-                if (_state == State.IsDamaged) 
+                if (_state == States.IsDamaged) 
                     color = Color.IndianRed * 1f;
 
-                if (_state == State.IsDead) 
+                if (_state == States.IsDead) 
                     color = Color.Red;
 
                 GFX.Draw(batch, tex, color * (_arena.IsCardInMap(this, Point.Zero)?1f:.75f) * _alphaSpawn, _loop._current, AbsXY + (tex.Bounds.Size.ToVector2()/2) + _shake.GetVector2(), Position.CENTER, Vector2.One * _scaleSpawn);
@@ -696,7 +696,7 @@ namespace BattleSystem
 
             if(indexLayer == (int)Layers.BackFX)
             {
-                if (_state == State.IsMove) 
+                if (_state == States.IsMove) 
                 {
                     float alpha = _tempoMove/(float)(_ticMove*5+.01f);
 
@@ -710,7 +710,7 @@ namespace BattleSystem
 
             if (indexLayer == (int)Layers.FrontFX)
             {
-                if (_state == State.IsDamaged)
+                if (_state == States.IsDamaged)
                 {
                     //GFX.Rectangle(batch, AbsRectF.Extend(2), Color.Orange * .5f, 2f);
                     GFX.BevelledRectangle(batch, AbsRectF.Extend(2) + _shake.GetVector2(), Vector2.One * 10, Color.PaleVioletRed *.75f, 4f);
