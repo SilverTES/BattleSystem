@@ -74,15 +74,17 @@ namespace BattleSystem
         }
         public override Node Init()
         {
+            Misc.Log($"{Card.Timers.Spawn}");
+
             _arena.ClearArena();
 
             InitChilds();
 
-            Card.ResetZIndexCard();
+            Card.ResetZIndexDragAndDrop();
             _arena.AddCard(7, 1, 2, 2);
             _arena.AddCard(5, 4, 2, 3);
 
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < 10; i++)
             {
                 int x, y;
 
@@ -106,7 +108,7 @@ namespace BattleSystem
 
                 //_chainGrid.Init();
                 //Game1.Quit();
-                _arena.SetState(Arena.States.Phase_Enemy);
+                _arena.SetState((int)Arena.States.PhaseEnemy);
             }
 
             if (_btnRoll._navi._onClick)
@@ -114,7 +116,7 @@ namespace BattleSystem
                 Misc.Log("ScreenPlay.Init");
                 Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, .5f);
                 Init();
-                _arena.SetState(Arena.States.Phase_Player);
+                _arena.SetState((int)Arena.States.PhasePlayer);
             }
 
             if (ButtonControl.OnePress("AddCard", Game1._mouseState.LeftButton == ButtonState.Pressed && Game1._keyState.IsKeyDown(Keys.LeftControl)))
@@ -162,10 +164,19 @@ namespace BattleSystem
 
             switch ((Layers)indexLayer)
             {
+                case Layers.ImGui:
+                    break;
+
+                case Layers.Gui:
+
+                    DrawChilds(batch, gameTime, indexLayer);
+                    _layerGui.DrawChilds(batch, gameTime, indexLayer);
+                    break;
+
                 case Layers.Main:
 
-                    batch.Draw(Game1._texBackground, new Vector2(0,_loop._current), Color.White * .5f);
-                
+                    batch.Draw(Game1._texBackground, new Vector2(0, _loop._current), Color.White * .5f);
+
                     //GFX.Grid(batch, 0, 0, Game1.ScreenW, Game1.ScreenH, CellW, CellH, Color.Gray * .25f, 3);
                     //GFX.Grid(batch, 0, 0, Game1.ScreenW, Game1.ScreenH, CellW, CellH, Color.Black * .5f, 1);
 
@@ -181,19 +192,16 @@ namespace BattleSystem
 
                     DrawChilds(batch, gameTime, indexLayer);
 
-
-
                     //batch.Draw(Game1._texBtnBase, Vector2.One * 20, Color.White);
                     //GFX.RoundedRectangle(batch, new RectangleF(400, 300, 240, 180), 32, 32, Color.White, 5f);
                     //GFX.BevelledRectangle(batch, new RectangleF(800, 200, 180, 160), new Vector2(20, 20), Color.OrangeRed, 5f);
-
-
                     break;
 
-                case Layers.Gui:
+                case Layers.Debug:
 
                     DrawChilds(batch, gameTime, indexLayer);
-                    _layerGui.DrawChilds(batch, gameTime, indexLayer);
+
+                    GFX.LeftTopBorderedString(batch, Game1._fontMain2, $"{_arena.NbActive()}/{_arena.NbNode()}", 10, 30, Color.White, Color.Red);
                     break;
 
                 case Layers.FrontFX:
@@ -212,18 +220,7 @@ namespace BattleSystem
                     //GFX.Sight(batch, _mouse, Game1.ScreenW, Game1.ScreenH, Color.Red * .5f, 3f);
                     //GFX.Sight(batch, _mouse, Game1.ScreenW, Game1.ScreenH, Color.Yellow, 1f);
                     break;
-
-                case Layers.Debug:
-
-                    DrawChilds(batch, gameTime, indexLayer);
-
-                    GFX.LeftTopBorderedString(batch, Game1._fontMain2, $"{_arena.NbActive()}/{_arena.NbNode()}", 10, 30, Color.White, Color.Red);
-                    break;
-
-                default:
-                    break;
             }
-
 
             return base.Draw(batch, gameTime, indexLayer);
         }

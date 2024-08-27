@@ -47,7 +47,7 @@ namespace BattleSystem.Gui
             Count
         }
 
-        protected State _state = State.Default;
+        //protected State _state = State.Default;
 
         public string _label = "";
         protected SpriteFont _font;
@@ -74,11 +74,11 @@ namespace BattleSystem.Gui
 
         protected MouseControl _mouseControl;
 
-        public void SetState(State state)
-        {
-            _state = state;
-            //Console.WriteLine(_state);
-        }
+        //public void SetState(State state)
+        //{
+        //    _state = state;
+        //    //Console.WriteLine(_state);
+        //}
         public BaseGui(MouseControl mouseControl, string label, JObject style)
         {
             _mouseControl = mouseControl;
@@ -191,7 +191,7 @@ namespace BattleSystem.Gui
             _navi._isMouseOver = Collision2D.PointInRect(new Vector2(_mouseControl._x, _mouseControl._y), _rect);
 
             if (_navi._isMouseOver)
-                SetState(State.Over);
+                SetState((int)State.Over);
 
             if (_navi._isMouseOver && _navi._isMouseOut)
             {
@@ -204,7 +204,7 @@ namespace BattleSystem.Gui
                 _navi._isMouseOut = true;
                 _navi._isPress = false;
                 _navi._isRelease = false;
-                SetState(State.Default);
+                SetState((int)State.Default);
             }
 
             if (_navi._isMouseOver && _mouseControl._onClick)
@@ -240,7 +240,7 @@ namespace BattleSystem.Gui
                 _navi._isPress = true;
                 _navi._isRelease = false;
 
-                SetState(State.IsPress);
+                SetState((int)State.IsPress);
             }
 
             var animates = _animateVec2.GetAll();

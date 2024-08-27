@@ -18,6 +18,20 @@ using MonoGame.Aseprite;
 
 namespace BattleSystem
 {
+    //public struct Enum<T>
+    //{
+    //    static int _enumIndex = 0;
+    //    public static int Add()
+    //    {
+    //        return _enumIndex++;
+    //    }
+    //    public static int StartAt(int startIndex)
+    //    {
+    //        _enumIndex = startIndex;
+    //        return _enumIndex;
+    //    }
+    //}
+
     enum ButtonDown
     {
         A,
@@ -27,7 +41,7 @@ namespace BattleSystem
         F1,
         F11,
         R,
-        Count
+        Count,
     }
 
     public enum Layers
@@ -35,11 +49,12 @@ namespace BattleSystem
         ImGui,
         Gui,
         Main,
+        Debug,
         FrontFX,
         BackFX,
-        Debug,
-        Count
+        Count,
     }
+
 
     public class Game1 : Game
     {
@@ -85,21 +100,16 @@ namespace BattleSystem
         public static SoundEffect _soundPop;
         public static SoundEffect _soundWoodHit;
 
-        //public static AsepriteFile _aseFile;
-
         public static SpriteSheet _spriteSheetSlash;
         public static SpriteSheet _spriteSheetFireExplosion;
         public static SpriteSheet _spriteSheetFireCamp;
-
-        public static string _hello = "Hello tout le monde";
 
         public Vector2 _mouse;
         public static MouseState _mouseState;
         public static KeyboardState _keyState;
 
         private ScreenPlay _screenPlay;
-        
-        public WindowManager WM => _windowManager;
+
         private WindowManager _windowManager;
         private SpriteBatch _batch;
         private StateEvent _button;
@@ -113,6 +123,7 @@ namespace BattleSystem
         bool _isShowImGuiDebug = true;
 
         public static float _volumeMaster = .5f;
+
         #endregion
 
         public Game1()
@@ -136,8 +147,8 @@ namespace BattleSystem
             _batch = new SpriteBatch(GraphicsDevice);
 
 
-
             _button = new StateEvent((int)ButtonDown.Count);
+
             var style = (JObject)JsonConvert.DeserializeObject(File.ReadAllText("Content/Misc/styleBtnFullscreen.json"));
             _btnFullScreen = (Gui.CheckBox)new Gui.CheckBox(MouseControl,"", style)
                 .SetPosition(ScreenW - 20, 20);
@@ -270,30 +281,17 @@ namespace BattleSystem
                 ImGui.Text($"Monitor = {GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width}x{GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height}");
                 ImGui.Text($"Window = {Window.ClientBounds.Width}x{Window.ClientBounds.Height}");
                 ImGui.InputText("Text", ref inputText, 32);
+                ImGui.Text($"Total Memory Usage = {GC.GetTotalMemory(true) / 1_000_000}MB");
                 //ImGui.ShowDemoWindow();
                 _imGuiRenderer.AfterLayout();
 
                 ScreenManager.EndDraw();
             }
 
-
-            ScreenManager.BeginDraw((int)Layers.Main, SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap);
-            ScreenManager.DrawLayer((int)Layers.Main , gameTime);
-            ScreenManager.EndDraw();
-
-
-            ScreenManager.BeginDraw((int)Layers.BackFX, SpriteSortMode.Deferred, BlendState.Additive, SamplerState.LinearWrap);
-            ScreenManager.DrawLayer((int)Layers.BackFX, gameTime);
-            ScreenManager.EndDraw();
-            
-            ScreenManager.BeginDraw((int)Layers.FrontFX, SpriteSortMode.Deferred, BlendState.Additive, SamplerState.LinearWrap);
-            ScreenManager.DrawLayer((int)Layers.FrontFX, gameTime);
-            ScreenManager.EndDraw();
-
-
-            ScreenManager.BeginDraw((int)Layers.Debug, SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap);
-            ScreenManager.DrawLayer((int)Layers.Debug, gameTime);
-            ScreenManager.EndDraw();
+            ScreenManager.Draw(gameTime, (int)Layers.Main, SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap);
+            ScreenManager.Draw(gameTime, (int)Layers.BackFX, SpriteSortMode.Deferred, BlendState.Additive, SamplerState.LinearWrap);
+            ScreenManager.Draw(gameTime, (int)Layers.FrontFX, SpriteSortMode.Deferred, BlendState.Additive, SamplerState.LinearWrap);
+            ScreenManager.Draw(gameTime, (int)Layers.Debug, SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap);
 
             ScreenManager.BeginDraw((int)Layers.Gui, SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap);
             ScreenManager.DrawLayer((int)Layers.Gui, gameTime);

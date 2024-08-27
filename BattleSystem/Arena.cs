@@ -15,14 +15,13 @@ namespace BattleSystem
     {
         public enum States
         {
-            Phase_Player,
-            Phase_Enemy,
+            PhasePlayer,
+            PhaseEnemy,
             Transition,
             Count,
         }
 
-        States _state = States.Phase_Player;
-        public States State { get { return _state; } }
+        public int State { get { return _state; } }
 
         public Card CurrentDragged { get; private set; }
         int _mapW;
@@ -54,7 +53,8 @@ namespace BattleSystem
         DropZone _dropZoneInGrid;
         
         public Arena(int mapW, int mapH, int cellW = 32, int cellH = 32) 
-        { 
+        {
+
             _mapW = mapW;
             _mapH = mapH;
             MapSize = new Point(mapW, mapH);
@@ -88,52 +88,13 @@ namespace BattleSystem
             _dropZoneInGrid.Show(false);
 
         }
-        private void ExitState()
+        public override Node Init()
         {
-            switch (_state)
-            {
-                case States.Phase_Player:
-                    break;
-                case States.Phase_Enemy:
-                    break;
-                case States.Transition:
-                    break;
-                case States.Count:
-                    break;
-                default:
-                    break;
-            }
+
+            return base.Init();
         }
-        private void EnterState()
-        {
-            switch (_state)
-            {
-                case States.Phase_Player:
-                    break;
-                case States.Phase_Enemy:
-                    foreach (var node in GroupOf(UID.Get<Card>()))
-                    {
-                        Card card = node.This<Card>();
-                        card.SetState(Card.States.IsWait);
-                    }
-                    break;
-                case States.Transition:
-                    break;
-                case States.Count:
-                    break;
-                default:
-                    break;
-            }
-        }
-        public void SetState(States state)
-        {
-            // Exit previous state
-            ExitState();
-            // change state to new state
-            _state = state;
-            // Enter new state
-            EnterState();
-        }
+
+        #region Utils
         public Vector2 GetMouse()
         {
             return _mouse; 
@@ -393,110 +354,147 @@ namespace BattleSystem
                 }
             }
         }
-        public override Node Init()
-        {
+        #endregion
 
-            return base.Init();
+        #region State Methods
+        protected override void ExitState()
+        {
+            switch ((States)_state)
+            {
+                case States.PhasePlayer:
+                    break;
+                case States.PhaseEnemy:
+                    break;
+                case States.Transition:
+                    break;
+            }
         }
+        protected override void EnterState()
+        {
+            switch ((States)_state)
+            {
+                case States.PhasePlayer:
+                    break;
+
+                case States.PhaseEnemy:
+                    foreach (var node in GroupOf(UID.Get<Card>()))
+                    {
+                        Card card = node.This<Card>();
+                        card.SetState((int)Card.States.IsWait);
+                    }
+                    break;
+
+                case States.Transition:
+                    break;
+            }
+        }
+        protected override void RunState(GameTime gameTime)
+        {
+            switch ((States)_state)
+            {
+                case States.PhasePlayer: PhasePlayer(gameTime);
+                    break;
+                case States.PhaseEnemy: PhaseEnemy(gameTime);
+                    break;
+                case States.Transition: Transition(gameTime);
+                    break;
+            }            
+        }
+        void PhasePlayer(GameTime gameTime)
+        {
+            if (CurrentDragged != null)
+            {
+                // Quand drag un Unit , on change la position du pointeur (souris) par le milieu de l'Unit qui est en train d'être dragué
+                _mouse.X = CurrentDragged._rect.TopLeft.X + _cellW / 2;
+                _mouse.Y = CurrentDragged._rect.TopLeft.Y + _cellH / 2;
+
+                _rectZoneDroppable.Width = _rect.Width - ((CurrentDragged.Size.X - 1) * _cellW) + _cellW / 2;
+                _rectZoneDroppable.Height = _rect.Height - ((CurrentDragged.Size.Y - 1) * _cellH) + _cellH / 2;
+            }
+            else
+            {
+                _mouse.X = Game1.MouseControl.GetPosition().X - _x;
+                _mouse.Y = Game1.MouseControl.GetPosition().Y - _y;
+
+                _rectZoneDroppable.X = _rect.X;
+                _rectZoneDroppable.Y = _rect.Y;
+            }
+
+            _isMouseOverGrid = Misc.PointInRect(_mouse.X + _x + _cellW / 2, _mouse.Y + _y + _cellH / 2, _rectZoneDroppable);
+
+            _mapCursor.X = (int)Math.Floor(_mouse.X / _cellW);
+            _mapCursor.Y = (int)Math.Floor(_mouse.Y / _cellH);
+
+            if (_mapCursor.X < 0) _mapCursor.X = 0;
+            if (_mapCursor.X > _mapW - 1) _mapCursor.X = _mapW - 1;
+            if (_mapCursor.Y < 0) _mapCursor.Y = 0;
+            if (_mapCursor.Y > _mapH - 1) _mapCursor.Y = _mapH - 1;
+
+            _cursor.X = _mapCursor.X * _cellW;
+            _cursor.Y = _mapCursor.Y * _cellH;
+
+
+            // Manage Drag & Drop Zone
+            //if (_isMouseOverGrid && Game1.MouseControl._down)
+            //{
+
+            if (CurrentDragged != null)
+                _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(CurrentDragged._rect.Width, CurrentDragged._rect.Height));
+            else
+                _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(_cellW, _cellH));
+
+            //if (_prevRectCursor != _rectCursor)
+            //    Game1._soundClock.Play(0.5f, 1f, .5f);
+
+            _prevRectCursor = _rectCursor;
+
+            _dropZoneInGrid.UpdateZone(_rectCursor, -10);
+
+            //}
+
+
+            if (!_isMouseOverGrid && !Game1.MouseControl._isActiveDrag && CurrentDragged != null)
+                _dropZoneInGrid.SetActive(false);
+            else 
+                _dropZoneInGrid.SetActive(true);
+
+            _dropZoneManager.Update(gameTime, GroupOf([UID.Get<Card>()]));
+
+            CurrentDragged = null;
+
+            SortZAscending();
+            UpdateChildsSort(gameTime);
+            UpdateCells();
+
+            // reset focus
+            //if (_mouseControl._onClick)
+            //{
+            //    foreach (Node node in _listItems)
+            //    {
+            //        if (!node._navi._isMouseOver)// && !node._resizable._isMouseOver)
+            //            node._navi._isFocus = false;
+            //    }
+            //}
+        }
+        void PhaseEnemy(GameTime gameTime)
+        {
+            SortZAscending();
+            UpdateChildsSort(gameTime);
+            UpdateCells();
+        }
+        void Transition(GameTime gameTime)
+        {
+            SortZAscending();
+            UpdateChildsSort(gameTime);
+            UpdateCells();
+        }
+        #endregion
+
         public override Node Update(GameTime gameTime)
         {
             UpdateRect();
 
-            switch (_state)
-            {
-                case States.Phase_Player:
-
-                    if (CurrentDragged != null)
-                    {
-                        // Quand drag un Unit , on change la position du pointeur (souris) par le milieu de l'Unit qui est en train d'être dragué
-                        _mouse.X = CurrentDragged._rect.TopLeft.X + _cellW / 2;
-                        _mouse.Y = CurrentDragged._rect.TopLeft.Y + _cellH / 2;
-
-                        _rectZoneDroppable.Width = _rect.Width - ((CurrentDragged.Size.X - 1) * _cellW) + _cellW / 2;
-                        _rectZoneDroppable.Height = _rect.Height - ((CurrentDragged.Size.Y - 1) * _cellH) + _cellH / 2;
-                    }
-                    else
-                    {
-                        _mouse.X = Game1.MouseControl.GetPosition().X - _x;
-                        _mouse.Y = Game1.MouseControl.GetPosition().Y - _y;
-
-                        _rectZoneDroppable.X = _rect.X;
-                        _rectZoneDroppable.Y = _rect.Y;
-                    }
-
-                    _isMouseOverGrid = Misc.PointInRect(_mouse.X + _x + _cellW / 2, _mouse.Y + _y + _cellH / 2, _rectZoneDroppable);
-
-                    _mapCursor.X = (int)Math.Floor(_mouse.X / _cellW);
-                    _mapCursor.Y = (int)Math.Floor(_mouse.Y / _cellH);
-
-                    if (_mapCursor.X < 0) _mapCursor.X = 0;
-                    if (_mapCursor.X > _mapW - 1) _mapCursor.X = _mapW - 1;
-                    if (_mapCursor.Y < 0) _mapCursor.Y = 0;
-                    if (_mapCursor.Y > _mapH - 1) _mapCursor.Y = _mapH - 1;
-
-                    _cursor.X = _mapCursor.X * _cellW;
-                    _cursor.Y = _mapCursor.Y * _cellH;
-
-
-                    // Manage Drag & Drop Zone
-                    //if (_isMouseOverGrid && Game1.MouseControl._down)
-                    //{
-
-                    if (CurrentDragged != null)
-                        _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(CurrentDragged._rect.Width, CurrentDragged._rect.Height));
-                    else
-                        _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(_cellW, _cellH));
-
-                    //if (_prevRectCursor != _rectCursor)
-                    //    Game1._soundClock.Play(0.5f, 1f, .5f);
-
-                    _prevRectCursor = _rectCursor;
-
-                    _dropZoneInGrid.UpdateZone(_rectCursor, -10);
-
-                    //}
-
-
-                    if (!_isMouseOverGrid && !Game1.MouseControl._isActiveDrag && CurrentDragged != null)
-                        _dropZoneInGrid.SetActive(false);
-                    else 
-                        _dropZoneInGrid.SetActive(true);
-
-                    _dropZoneManager.Update(gameTime, GroupOf([UID.Get<Card>()]));
-
-                    CurrentDragged = null;
-
-                    SortZAscending();
-                    UpdateChildsSort(gameTime);
-                    UpdateCells();
-
-                    // reset focus
-                    //if (_mouseControl._onClick)
-                    //{
-                    //    foreach (Node node in _listItems)
-                    //    {
-                    //        if (!node._navi._isMouseOver)// && !node._resizable._isMouseOver)
-                    //            node._navi._isFocus = false;
-                    //    }
-                    //}
-
-                    break;
-                case States.Phase_Enemy:
-
-                    SortZAscending();
-                    UpdateChildsSort(gameTime);
-                    UpdateCells();
-
-                    break;
-                case States.Transition:
-
-                    SortZAscending();
-                    UpdateChildsSort(gameTime);
-                    UpdateCells();
-
-                    break;
-            }
-
+            RunState(gameTime);
 
             #region DEBUG
             if (ButtonControl.OnePress("MoveLeft", Keyboard.GetState().IsKeyDown(Keys.Left)))   MoveAllCardLeft(16);    
@@ -511,83 +509,88 @@ namespace BattleSystem
         {
             SortZDescending();
 
-            if (indexLayer == (int)Layers.Main)
+            switch ((Layers)indexLayer)
             {
-                // Show prevPosition of the CurrentUnitDragged
-                if (CurrentDragged != null)
-                    GFX.FillRectangle(batch, CurrentDragged.PrevPosition + AbsXY - (Vector2.One * (_loop._current - 20)), CurrentDragged.AbsRectF.GetSize() + (Vector2.One * 2 * (_loop._current - 20)), Color.Black * .25f);
+                case Layers.ImGui:
 
-                //GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .2f);
-                GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .15f);
+                    break;
 
-                GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Gray * .25f, 3);
-                GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Black * .75f, 1);
+                case Layers.Gui:
 
-                //GFX.BevelledRectangle(batch, AbsRect, Vector2.One * 4, Color.WhiteSmoke * .5f, 2f);
-                GFX.Rectangle(batch, AbsRect, Color.WhiteSmoke * .5f, 2f);
+                    DrawChilds(batch, gameTime, indexLayer);
+                    break;
 
-                _dropZoneManager.Draw(batch);
+                case Layers.Main:
 
-                // Draw rectCursor if unit over in zone grid
-                if (Game1.MouseControl._isActiveDrag)
-                {
+                    // Show prevPosition of the CurrentUnitDragged
                     if (CurrentDragged != null)
+                        GFX.FillRectangle(batch, CurrentDragged.PrevPosition + AbsXY - (Vector2.One * (_loop._current - 20)), CurrentDragged.AbsRectF.GetSize() + (Vector2.One * 2 * (_loop._current - 20)), Color.Black * .25f);
+
+                    //GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .2f);
+                    GFX.FillRectangle(batch, AbsRect, Color.DarkBlue * .15f);
+
+                    GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Gray * .25f, 3);
+                    GFX.Grid(batch, AbsXY, _rect.Width, _rect.Height, _cellW, _cellH, Color.Black * .75f, 1);
+
+                    //GFX.BevelledRectangle(batch, AbsRect, Vector2.One * 4, Color.WhiteSmoke * .5f, 2f);
+                    GFX.Rectangle(batch, AbsRect, Color.WhiteSmoke * .5f, 2f);
+
+                    _dropZoneManager.Draw(batch);
+
+                    // Draw rectCursor if unit over in zone grid
+                    if (Game1.MouseControl._isActiveDrag)
                     {
-                        RectangleF rectCursorExtend = ((RectangleF)_rectCursor).Extend(_loop._current);
-                        Color color = Color.LawnGreen;
-
-                        if (!CurrentDragged.IsPossibleToDrop())
+                        if (CurrentDragged != null)
                         {
-                            color = Color.OrangeRed;
+                            RectangleF rectCursorExtend = ((RectangleF)_rectCursor).Extend(_loop._current);
+                            Color color = Color.LawnGreen;
+
+                            if (!CurrentDragged.IsPossibleToDrop())
+                            {
+                                color = Color.OrangeRed;
+                            }
+
+                            if (IsCardInMap(CurrentDragged, Point.Zero))
+                            {
+                                GFX.FillRectangle(batch, rectCursorExtend, color * .25f);
+                                //GFX.Rectangle(batch, rectCursorExtend, color * .25f, 8f);
+                                GFX.BevelledRectangle(batch, rectCursorExtend, Vector2.One * 10, color * .25f, 4f);
+                            }
                         }
 
-                        if (IsCardInMap(CurrentDragged, Point.Zero))
-                        {
-                            GFX.FillRectangle(batch, rectCursorExtend, color * .25f);
-                            //GFX.Rectangle(batch, rectCursorExtend, color * .25f, 8f);
-                            GFX.BevelledRectangle(batch, rectCursorExtend, Vector2.One * 10, color * .25f, 4f);
-                        }
                     }
 
-                }
+                    DrawChilds(batch, gameTime, indexLayer);
+                    //DrawCells(batch, indexLayer);
+                    break;
 
-                DrawChilds(batch, gameTime, indexLayer);
-                //DrawCells(batch, indexLayer);
+                case Layers.Debug:
+
+                    DrawChilds(batch, gameTime, indexLayer);
+                    ShowDebug(batch);
+
+                    GFX.LeftTopString(batch, Game1._fontMain, $"{_mouse} -- {_mapCursor} -- {CurrentDragged} {CurrentDragged?._index}", AbsXY + new Vector2(10, -20), Color.AntiqueWhite);
+
+                    GFX.LeftTopString(batch, Game1._fontMain, $"{(States)_state} {_isMouseOverGrid}", AbsRectF.BottomLeft + new Vector2(10, 10), Color.AntiqueWhite);
+                    break;
+
+                case Layers.FrontFX:
+
+                    DrawChilds(batch, gameTime, indexLayer);
+                    break;
+
+                case Layers.BackFX:
+
+                    DrawChilds(batch, gameTime, indexLayer);
+                    DrawCells(batch, indexLayer);
+
+                    break;
 
 
-            }
-
-            if (indexLayer == (int)Layers.BackFX)
-            {
-
-                DrawChilds(batch, gameTime, indexLayer);
-                DrawCells(batch, indexLayer);
-
-            }
-
-            if (indexLayer == (int)Layers.Gui)
-            {
-                DrawChilds(batch, gameTime, indexLayer);
-            }
-
-            if (indexLayer == (int)Layers.FrontFX)
-            {
-                DrawChilds(batch, gameTime, indexLayer);
-            }
-
-            if (indexLayer == (int)Layers.Debug)
-            {
-                DrawChilds(batch, gameTime, indexLayer);
-                ShowDebug(batch);
-
-                GFX.LeftTopString(batch, Game1._fontMain, $"{_mouse} -- {_mapCursor} -- {CurrentDragged} {CurrentDragged?._index}", AbsXY + new Vector2(10, -20), Color.AntiqueWhite);
-
-                GFX.LeftTopString(batch, Game1._fontMain, $"{_state} {_isMouseOverGrid}", AbsRectF.BottomLeft + new Vector2(10, 10), Color.AntiqueWhite);
             }
 
             return base.Draw(batch, gameTime, indexLayer);
         }
-
         private void ShowDebug(SpriteBatch batch)
         {
 
@@ -622,6 +625,5 @@ namespace BattleSystem
 
             }
         }
-
     }
 }

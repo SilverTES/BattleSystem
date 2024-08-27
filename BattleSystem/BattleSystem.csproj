@@ -37,7 +37,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Mugen">
-      <HintPath>..\..\Mugen\Mugen\bin\Debug\net6.0\Mugen.dll</HintPath>
+      <HintPath>..\..\Mugen\Mugen\bin\Release\net8.0\Mugen.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

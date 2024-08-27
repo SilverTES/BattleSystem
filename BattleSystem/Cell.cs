@@ -68,20 +68,20 @@ namespace BattleSystem
         }
         public void Draw(SpriteBatch batch, Point arenaTopLeft, int indexLayer)
         {
-            if (indexLayer == (int)Layers.BackFX)
+            switch ((Layers)indexLayer)
             {
-                if (!Game1.MouseControl._isActiveDrag)
-                {
-                    Rectangle rectCursor = new Rectangle(_position.ToPoint() + arenaTopLeft, _size);
+                case Layers.BackFX:
 
-                    GFX.FillRectangle(batch, RectangleF.Extend(rectCursor, -(1 - _alpha) * 20f), Color.White * _alpha * .5f);
-                    GFX.Rectangle(batch, RectangleF.Extend(rectCursor, -(1 - _alpha) * 20f), Color.White * _alpha * .5f);
-                }
-            }
-            if (indexLayer == (int)Layers.Main)
-            {
+                    if (!Game1.MouseControl._isActiveDrag)
+                    {
+                        Rectangle rectCursor = new Rectangle(_position.ToPoint() + arenaTopLeft, _size);
 
+                        GFX.FillRectangle(batch, RectangleF.Extend(rectCursor, -(1 - _alpha) * 20f), Color.White * _alpha * .5f);
+                        GFX.Rectangle(batch, RectangleF.Extend(rectCursor, -(1 - _alpha) * 20f), Color.White * _alpha * .5f);
+                    }
+                    break;
             }
+
         }
 
     }

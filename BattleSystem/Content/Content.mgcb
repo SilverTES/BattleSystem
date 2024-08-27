@@ -14,18 +14,6 @@
 
 #---------------------------------- Content ---------------------------------#
 
-#begin Animations/dragon.aseprite
-/importer:AsepriteFileContentImporter
-/processor:AsepriteFileContentProcessor
-/processorParam:PremultiplyAlpha=True
-/build:Animations/dragon.aseprite
-
-#begin Animations/Elena-ts-stance.aseprite
-/importer:AsepriteFileContentImporter
-/processor:AsepriteFileContentProcessor
-/processorParam:PremultiplyAlpha=True
-/build:Animations/Elena-ts-stance.aseprite
-
 #begin Animations/FireCamp.aseprite
 /importer:AsepriteFileContentImporter
 /processor:AsepriteFileContentProcessor
