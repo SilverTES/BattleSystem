@@ -9,28 +9,30 @@ namespace BattleSystem
 {
     public class DropZone
     {
+        static int _dropZoneIndex = 0;
+        public readonly int _index;
         bool _isShow = true;
-
-        public RectangleF _rect = new();
-
-        private RectangleF _rectNear = new();
-        private Node _containedNode = null;
+        public RectangleF _rectDropZone = new();
+        private RectangleF _rectNearDropZone = new();
+        private Node _curNodeInDropZone = null;
 
         bool _isNearNode = false;
 
-        int[] _droppablesType; // Nodes droppables in the zone
+        int[] _droppableTypes; // Nodes droppables in the zone
 
         bool _isActive = true;
 
-        public DropZone(Rectangle rect, float nearZoneSize, int[] droppables) 
-        { 
-            _rect = rect;
-            _droppablesType = droppables;
-            _rectNear = _rect.Extend(nearZoneSize);
+        public DropZone(Rectangle rect, float nearZoneSize, int[] droppableTypes) 
+        {
+            _index = _dropZoneIndex++;
+
+            _rectDropZone = rect;
+            _droppableTypes = droppableTypes;
+            _rectNearDropZone = _rectDropZone.Extend(nearZoneSize);
         }
         public void SetContainerNode(Node node) 
         {
-            _containedNode = node;
+            _curNodeInDropZone = node;
         }
         public void Show(bool isShow)
         { 
@@ -42,8 +44,8 @@ namespace BattleSystem
         }
         public void UpdateZone(RectangleF rect, float nearZoneSize) 
         {
-            _rect = rect;
-            _rectNear = _rect.Extend(nearZoneSize);
+            _rectDropZone = rect;
+            _rectNearDropZone = _rectDropZone.Extend(nearZoneSize);
         }
 
         public void Update(GameTime gameTime, List<Node> nodeToCheck)
@@ -55,29 +57,28 @@ namespace BattleSystem
 
             foreach (var item in nodeToCheck)
             {
-                if (Collision2D.RectRect(item.AbsRect, _rectNear))
+                if (Collision2D.RectRect(item.AbsRect, _rectNearDropZone))
                 {
                     _isNearNode = true;
 
-                    for (int i = 0;  i < _droppablesType.Length;  i++)
+                    for (int i = 0;  i < _droppableTypes.Length;  i++)
                     {
-                        if (item._type == _droppablesType[i])
+                        if (item._type == _droppableTypes[i])
                         {
-                            if (item._type == UID.Get<Card>())
-                            {
-                                var card = item.This<Card>();
-                                
-                                if (!card.IsDropped)
-                                {
-                                    if (_containedNode == null)
-                                    {
-                                        card.SetDropZone(this);
-                                        card.SetDropZonable(true);
-                                    }
+                            var dragAndDrop = item.This<DragAndDrop>();
 
+                            if (_curNodeInDropZone == null)
+                                if (!dragAndDrop.IsDropped)
+                                {
+                                    dragAndDrop.SetDropZone(this);
+                                    dragAndDrop.IsNearDropZone(true);
+                                }
+                                else
+                                {
+                                    dragAndDrop.SetDropZone(this);
+                                    SetContainerNode(item);
                                 }
 
-                            }
                         }
                     }
 
@@ -85,18 +86,13 @@ namespace BattleSystem
 
             }
 
-            if (_containedNode != null)
+            if (_curNodeInDropZone != null)
             {
-                if ((_containedNode._rect + _containedNode._parent.XY != _rect)) // Test if item is left the zone and dropZone contain a Node !
+                if (_curNodeInDropZone._rect.TopLeft + _curNodeInDropZone._parent.XY != _rectDropZone.TopLeft) // Test if itemXY is left the zoneXY and dropZone contain a Node !
                 {
-                    _containedNode = null;
+                    _curNodeInDropZone = null;
                     //Console.Write("<Retired contained Node>");
                 }
-            }
-
-            if (!_isNearNode)
-            {
-                _containedNode = null;
             }
         }
 
@@ -108,20 +104,22 @@ namespace BattleSystem
 
                 if (!_isActive) color = Color.Black;
 
-                GFX.Rectangle(batch, _rect, color * .75f * alpha, 4f);
-                GFX.Rectangle(batch, _rectNear, color * .25f * alpha, 2f);
+                GFX.Rectangle(batch, _rectDropZone, color * .75f * alpha, 4f);
+                GFX.Rectangle(batch, _rectNearDropZone, color * .25f * alpha, 2f);
 
                 if (_isNearNode)
-                    GFX.Rectangle(batch, _rectNear, color * .5f * alpha, 2f);
+                    GFX.Rectangle(batch, _rectNearDropZone, color * .5f * alpha, 2f);
 
-                if (_containedNode != null)
+                if (_curNodeInDropZone != null)
                 {
-                    GFX.CenterStringXY(batch, Game1._fontMain, $"{_containedNode}{_containedNode._index}", _rect.TopCenter + new Vector2(0, -10), Color.Gold);
-                    GFX.Rectangle(batch, _rect, Color.Black * .75f * alpha, 4f);
+                    GFX.CenterStringXY(batch, Game1._fontMain, $"{_curNodeInDropZone}{_curNodeInDropZone._index}", _rectDropZone.TopCenter + new Vector2(0, -10), Color.Gold);
+                    GFX.Rectangle(batch, _rectDropZone, Color.Black * .75f * alpha, 4f);
                 }
-                
+                else
+                {
+                    GFX.CenterStringXY(batch, Game1._fontMain, "_containerNode == null", _rectDropZone.TopCenter + new Vector2(0, -10), Color.Gold);
+                }
             }
-
         }
     }
 
@@ -136,20 +134,14 @@ namespace BattleSystem
         { 
             _zones.Add(zone);
         }
-        public void Update(GameTime gameTime, List<Node> nodeToCheck)
+        public void Update(GameTime gameTime, Node nodeContainDroppables, int[] droppableTypes)
         {
-            foreach (var item in nodeToCheck)
-            {
-                if (item._type == UID.Get<Card>())
-                item.This<Card>().SetDropZonable(false);
-            }
+            var nodeToCheck = nodeContainDroppables.GroupOf(droppableTypes);
 
             for (int i = 0; i < _zones.Count; i++)
             {
                 _zones[i].Update(gameTime, nodeToCheck);
-
             }
-
         }
 
         public void Draw(SpriteBatch batch)

@@ -60,7 +60,7 @@ namespace BattleSystem
         protected Point _size = new(1, 1);
         protected Point _mapPosition = new();
         // Come back to prev map position when drop in case is not possible
-        protected bool _backToPrevPosition = false;
+        protected bool _isBackToPrevPosition = false;
         //protected int _prevMapX;
         //protected int _prevMapY;
         protected Point _prevMapPosition = new();
@@ -69,9 +69,9 @@ namespace BattleSystem
         protected int _cellW;
         protected int _cellH;
 
-        protected bool _isDropZonable = false;
-        protected bool _isDropped = true;
-        protected DropZone _dropZone;
+        protected bool _isNearDropZone = false;
+        protected bool _isDropped = false;
+        protected DropZone _curDropZone;
 
         protected Addon.Draggable _draggable;
         protected Addon.Loop _loop;
@@ -88,7 +88,7 @@ namespace BattleSystem
         #endregion
         public DragAndDrop()
         {
-
+            _type = UID.Get<DragAndDrop>();
         }
 
         public static void ResetZIndexDragAndDrop()
@@ -103,13 +103,13 @@ namespace BattleSystem
         {
             return base.Init();
         }
-        public void SetDropZonable(bool isDropZonable)
+        public void IsNearDropZone(bool isNearDropZone)
         {
-            _isDropZonable = isDropZonable;
+            _isNearDropZone = isNearDropZone;
         }
         public void SetDropZone(DropZone dropZone)
         {
-            _dropZone = dropZone;
+            _curDropZone = dropZone;
         }
         public DragAndDrop SetMapPosition(int mapX, int mapY)
         {
@@ -128,35 +128,9 @@ namespace BattleSystem
             SetSize(_size.X * _cellW, _size.Y * _cellH);
             return this;
         }
-        public bool IsPossibleToDrop()
-        {
-            bool isPossibleToDrop = true;
-
-            for (int i = 0; i < _size.X; i++)
-            {
-                for (int j = 0; j < _size.Y; j++)
-                {
-                    var cellOver = _arena.GetCell(_mapPosition.X + i, _mapPosition.Y + j);
-
-                    if (cellOver == null)
-                    {
-                        isPossibleToDrop = false;
-                    }
-
-                    if (cellOver != null)
-                    {
-                        if (cellOver._card != null)
-                        {
-                            isPossibleToDrop = false;
-                        }
-                    }
-                }
-            }
-
-            return isPossibleToDrop;
-        }
         public override Node Update(GameTime gameTime)
         {
+            _isNearDropZone = false;
             return base.Update(gameTime);
         }
 
@@ -164,13 +138,14 @@ namespace BattleSystem
 
     public class Card : DragAndDrop
     {
-        public Card(Arena arena, float tempoBeforeSpawn = 0f) 
+        public Card(Arena arena, bool isDropped = true, float tempoBeforeSpawn = 0f) 
         {
             _z = GetZIndexDragAndDrop();
 
             _type = UID.Get<Card>();
             
             _arena = arena;
+            _isDropped = isDropped;
             _tempoBeforeSpawn = tempoBeforeSpawn;
 
             _cellW = _arena.CellSize.X;
@@ -378,19 +353,18 @@ namespace BattleSystem
         }
         private void OffDragged()
         {
-            if (_arena._isMouseOverGrid && IsPossibleToDrop() && _isDropZonable)
+            if (_isNearDropZone && _arena.IsPossibleToDropCard(this))
             {
-                MoveTo(_dropZone._rect.TopLeft - _parent.XY);
-            }
-            else if(!_arena._isMouseOverGrid && _isDropZonable)
-            {
-                MoveTo(_dropZone._rect.TopLeft - _parent.XY);
+                MoveTo(_curDropZone._rectDropZone.TopLeft - _parent.XY);
+                _isBackToPrevPosition = false;
             }
             else
             {
                 MoveTo(_prevPosition);
-                _backToPrevPosition = true;
+                _isBackToPrevPosition = true;
             }
+
+            Misc.Log($"_isBacktoPrevPosition = {_isBackToPrevPosition}");
         }
         #endregion
 
@@ -417,8 +391,6 @@ namespace BattleSystem
         }
         void IsPlay(GameTime gameTime)
         {
-            _backToPrevPosition = false;
-
             if (_draggable._isDragged)
             {
                 IsDragged();
@@ -462,25 +434,30 @@ namespace BattleSystem
 
                 _isDropped = true;
 
-                if (_isDropZonable)
+                bool playSound = false;
+
+                if (_isNearDropZone)
                 {
-                    _isDropZonable = false;
-                    _dropZone.SetContainerNode(this);
+                    //_isNearDropZone = false;
+                    _curDropZone.SetContainerNode(this);
+
+                    playSound = true;
                 }
 
-                if (_backToPrevPosition)
+                if (_isBackToPrevPosition)
                 {
-
+                    playSound = true;
                 }
 
-                Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, 0f);
+                if (playSound)
+                    Game1._soundClock.Play(Game1._volumeMaster * .5f, 1f, 0f);
 
                 BackState();
             }
             else
             {
                 // Efface les traces de la carte dans l'Arena quand elle bouge toute seule
-                if (!_isDropZonable || !_draggable._isDragged)
+                if (!_isNearDropZone || !_draggable._isDragged)
                     _arena.EraseCellCard(_mapPosition.X, _mapPosition.Y, this);
             }
         }
@@ -500,6 +477,58 @@ namespace BattleSystem
                 //Console.WriteLine("Le est venu !!");
                 new FireExplosion().SetPosition(_rect.Center).AppendTo(_arena);
                 DestroyMe();
+            }
+        }
+        protected override void ExitState()
+        {
+            switch ((States)_state)
+            {
+                case States.IsNull:
+                    break;
+                case States.IsSpawn:
+                    break;
+                case States.IsPlay:
+                    break;
+                case States.IsWait:
+                    break;
+                case States.IsMove:
+                    break;
+                case States.IsAttack:
+                    break;
+                case States.IsDamaged:
+                    break;
+                case States.IsDead:
+                    break;
+            }
+        }
+        protected override void EnterState()
+        {
+            switch ((States)_state)
+            {
+                case States.IsNull:
+                    _draggable.SetDraggable(false);
+                    break;
+                case States.IsSpawn:
+                    _draggable.SetDraggable(false);
+                    break;
+                case States.IsPlay:
+                    _draggable.SetDraggable(true);
+                    break;
+                case States.IsWait:
+                    _draggable.SetDraggable(false);
+                    break;
+                case States.IsMove:
+                    _draggable.SetDraggable(false);
+                    break;
+                case States.IsAttack:
+                    _draggable.SetDraggable(false);
+                    break;
+                case States.IsDamaged:
+                    _draggable.SetDraggable(false);
+                    break;
+                case States.IsDead:
+                    _draggable.SetDraggable(false);
+                    break;
             }
         }
         protected override void RunState(GameTime gameTime)
@@ -540,8 +569,11 @@ namespace BattleSystem
                 _timer.StartTimer((int)Timers.Death);
             }
 
-            if (_isDropped)
+            if (_isDropped && _arena.IsCardInMap(this, Point.Zero))
                 _arena.SetCellCard(_mapPosition.X, _mapPosition.Y, this);
+
+            // invisible if _state is States.IsNull
+            _isVisible = _state != (int)States.IsNull;
 
             RunState(gameTime);
 
@@ -549,9 +581,6 @@ namespace BattleSystem
         }
         public override Node Draw(SpriteBatch batch, GameTime gameTime, int indexLayer)
         {
-            if (_state == (int)States.IsNull) 
-                return this;
-
             switch ((Layers)indexLayer)
             {
                 case Layers.ImGui:
@@ -621,7 +650,7 @@ namespace BattleSystem
 
                 case Layers.Debug:
 
-                    GFX.CenterStringXY(batch, Game1._fontMain, $"{_mapPosition}\n{(States)_state}\n_type={_type}\nZIndex={_arena.GetChildZIndex(_index)._index}\n_z={_z}", AbsRectF.BottomCenter, Color.Yellow);
+                    GFX.CenterStringXY(batch, Game1._fontMain, $"_isDropped{_isDropped}\n{(States)_state}\n_type={UID.Name(_type)}.{UID.Name(_subType)}\n_curDropZone={_curDropZone?._index}", AbsRectF.BottomCenter, Color.Yellow);
 
                     //if (_paths != null && _draggable._isDragged)
                     //    if (_paths.Count > 0)

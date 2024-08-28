@@ -94,7 +94,7 @@ namespace BattleSystem
                     y = Misc.Rng.Next(0, ArenaH);
 
                 //} while (!_arena.AddCard(x, y, 1, 1));
-                } while (!_arena.AddCard(x, y, new Unit1x1(_arena, TimerEvent.Time(0, 0, .05f * i))));
+                } while (!_arena.AddCard(x, y, new Unit1x1(_arena, true, TimerEvent.Time(0, 0, .05f * i))));
 
             }
 

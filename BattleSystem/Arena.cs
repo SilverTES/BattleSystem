@@ -76,7 +76,7 @@ namespace BattleSystem
             _loop.Start();
             AddAddon(_loop);
 
-            int[] _droppables = [UID.Get<Card>()]; // equivalent : new int[] {UID.Get<Card>()}
+            int[] _droppables = [UID.Get<DragAndDrop>(), UID.Get<Card>()]; // equivalent : new int[] {UID.Get<Card>()}
 
 
             _dropZoneManager = new DropZoneManager();
@@ -141,6 +141,35 @@ namespace BattleSystem
         public List<List<Cell>> GetMap()
         {
             return _grid.Get2DList();
+        }
+        public bool IsPossibleToDropCard(Card card)
+        {
+            if (!_isMouseOverGrid) return true;
+            
+            bool isPossibleToDrop = true;
+
+            for (int i = 0; i < card.Size.X; i++)
+            {
+                for (int j = 0; j < card.Size.Y; j++)
+                {
+                    var cellOver = GetCell(card.MapPosition.X + i, card.MapPosition.Y + j);
+
+                    if (cellOver == null)
+                    {
+                        isPossibleToDrop = false;
+                    }
+
+                    if (cellOver != null)
+                    {
+                        if (cellOver._card != null)
+                        {
+                            isPossibleToDrop = false;
+                        }
+                    }
+                }
+            }
+
+            return isPossibleToDrop;
         }
         public bool IsPointInMap(int mapX, int mapY)
         {
@@ -458,7 +487,7 @@ namespace BattleSystem
             else 
                 _dropZoneInGrid.SetActive(true);
 
-            _dropZoneManager.Update(gameTime, GroupOf([UID.Get<Card>()]));
+            _dropZoneManager.Update(gameTime, this, [UID.Get<Card>()]);
 
             CurrentDragged = null;
 
@@ -545,7 +574,7 @@ namespace BattleSystem
                             RectangleF rectCursorExtend = ((RectangleF)_rectCursor).Extend(_loop._current);
                             Color color = Color.LawnGreen;
 
-                            if (!CurrentDragged.IsPossibleToDrop())
+                            if (!IsPossibleToDropCard(CurrentDragged))
                             {
                                 color = Color.OrangeRed;
                             }
