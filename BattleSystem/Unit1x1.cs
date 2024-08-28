@@ -1,10 +1,4 @@
-﻿
-
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using Mugen.Core;
-using Mugen.Input;
+﻿using Mugen.Core;
 
 namespace BattleSystem
 {

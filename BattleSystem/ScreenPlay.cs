@@ -16,6 +16,7 @@ namespace BattleSystem
 {
     internal class ScreenPlay : Node
     {
+        #region Attributes
         public const int CellW = 128;
         public const int CellH = 128;
 
@@ -32,9 +33,7 @@ namespace BattleSystem
         Gui.Button _btnAction;
 
         Node _layerGui;
-
-        //FireCamp _fireCamp;
-
+        #endregion
         public ScreenPlay(Game1 game) 
         { 
             _game = game;
@@ -67,10 +66,6 @@ namespace BattleSystem
                 .SetPosition(160, Game1.ScreenH - 40)
                 .AppendTo(_layerGui);
 
-            //_fireCamp = (FireCamp)new FireCamp()
-            //    .SetPosition(50,80)
-            //    .AppendTo(this);
-
         }
         public override Node Init()
         {
@@ -80,7 +75,7 @@ namespace BattleSystem
 
             InitChilds();
 
-            Card.ResetZIndexDragAndDrop();
+            Card.ResetZIndexCard();
             _arena.AddCard(7, 1, 2, 2);
             _arena.AddCard(5, 4, 2, 3);
 
@@ -93,7 +88,6 @@ namespace BattleSystem
                     x = Misc.Rng.Next(0, ArenaW);
                     y = Misc.Rng.Next(0, ArenaH);
 
-                //} while (!_arena.AddCard(x, y, 1, 1));
                 } while (!_arena.AddCard(x, y, new Unit1x1(_arena, true, TimerEvent.Time(0, 0, .05f * i))));
 
             }
@@ -139,8 +133,7 @@ namespace BattleSystem
 
             if (ButtonControl.OnePress("AddFireExplosion", Game1._mouseState.LeftButton == ButtonState.Pressed && Game1._keyState.IsKeyDown(Keys.F)))// && Keyboard.GetState().IsKeyDown(Keys.Space)))
             {
-                //if (_arena._isMouseOverGrid)
-                    new FireExplosion().SetPosition(_arena.GetMouse()).AppendTo(_arena);
+                new FireExplosion().SetPosition(_arena.GetMouse()).AppendTo(_arena);
             }
 
             //_game.IsMouseVisible = !_mouseControl._isActiveDrag; // hide mouse when drag !
@@ -148,16 +141,11 @@ namespace BattleSystem
         public override Node Update(GameTime gameTime)
         {
             HandleInput(gameTime);
-
-            //_fireCamp.SetPosition(Game1.MouseControl.GetPosition().ToVector2());
-
             UpdateChilds(gameTime);
-
             _layerGui.UpdateChilds(gameTime);
 
             return base.Update(gameTime);
         }
-
         public override Node Draw(SpriteBatch batch, GameTime gameTime, int indexLayer)
         {
             batch.GraphicsDevice.Clear(Color.Transparent);
@@ -224,6 +212,5 @@ namespace BattleSystem
 
             return base.Draw(batch, gameTime, indexLayer);
         }
-
     }
 }

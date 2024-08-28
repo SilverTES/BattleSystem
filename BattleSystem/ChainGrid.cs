@@ -200,12 +200,7 @@ namespace BattleSystem
                 _isBeginChain = false;
                 _firstSelected = 0;
                 ResetAllCell();
-
             }
-
-
-            
-
 
             return base.Update(gameTime);
         }

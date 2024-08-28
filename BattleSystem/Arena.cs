@@ -21,37 +21,29 @@ namespace BattleSystem
             Count,
         }
 
+        #region Attributes
         public int State { get { return _state; } }
-
         public Card CurrentDragged { get; private set; }
         int _mapW;
         int _mapH;
-
         RectangleF _rectZoneDroppable;
-
         public Point MapSize { get; private set; }
-
         Point _mapCursor = new();
         public Point MapCursor => _mapCursor;
         Vector2 _cursor = new();
         RectangleF _rectCursor;
         RectangleF _prevRectCursor;
-
         int _cellW;
         int _cellH;
-
         public Point CellSize { get; private set; }
-
         List2D<Cell> _grid;
-
         Vector2 _mouse;
         public bool _isMouseOverGrid = false;
-
         Addon.Loop _loop;
-
         DropZoneManager _dropZoneManager;
         DropZone _dropZoneInGrid;
-        
+        #endregion
+
         public Arena(int mapW, int mapH, int cellW = 32, int cellH = 32) 
         {
 
@@ -76,7 +68,7 @@ namespace BattleSystem
             _loop.Start();
             AddAddon(_loop);
 
-            int[] _droppables = [UID.Get<DragAndDrop>(), UID.Get<Card>()]; // equivalent : new int[] {UID.Get<Card>()}
+            int[] _droppables = [UID.Get<Card>()]; // equivalent : new int[] {UID.Get<Card>()}
 
 
             _dropZoneManager = new DropZoneManager();
@@ -463,23 +455,17 @@ namespace BattleSystem
             _cursor.Y = _mapCursor.Y * _cellH;
 
 
-            // Manage Drag & Drop Zone
-            //if (_isMouseOverGrid && Game1.MouseControl._down)
-            //{
-
             if (CurrentDragged != null)
                 _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(CurrentDragged._rect.Width, CurrentDragged._rect.Height));
             else
                 _rectCursor = new RectangleF(_cursor.ToPoint() + new Point(AbsX, AbsY), new Size2(_cellW, _cellH));
 
-            //if (_prevRectCursor != _rectCursor)
-            //    Game1._soundClock.Play(0.5f, 1f, .5f);
+            if (_prevRectCursor != _rectCursor && CurrentDragged != null)
+                Game1._soundClock.Play(0.1f, 1f, .5f);
 
             _prevRectCursor = _rectCursor;
 
             _dropZoneInGrid.UpdateZone(_rectCursor, -10);
-
-            //}
 
 
             if (!_isMouseOverGrid && !Game1.MouseControl._isActiveDrag && CurrentDragged != null)

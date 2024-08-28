@@ -10,7 +10,7 @@ using Mugen.Physics;
 
 namespace BattleSystem
 {
-    public class DragAndDrop : Node
+    public class Card : Node
     {
         public enum Timers
         {
@@ -38,7 +38,6 @@ namespace BattleSystem
         public Point Size => _size;
         public Vector2 PrevPosition => _prevPosition;
         public bool IsDropped => _isDropped;
-
 
         protected TimerEvent _timer;
         // Statistic of the Card
@@ -86,61 +85,9 @@ namespace BattleSystem
 
         static float _zIndex = 0;
         #endregion
-        public DragAndDrop()
-        {
-            _type = UID.Get<DragAndDrop>();
-        }
-
-        public static void ResetZIndexDragAndDrop()
-        {
-            _zIndex = 0;
-        }
-        public static float GetZIndexDragAndDrop()
-        {
-            return _zIndex++;
-        }
-        public override Node Init()
-        {
-            return base.Init();
-        }
-        public void IsNearDropZone(bool isNearDropZone)
-        {
-            _isNearDropZone = isNearDropZone;
-        }
-        public void SetDropZone(DropZone dropZone)
-        {
-            _curDropZone = dropZone;
-        }
-        public DragAndDrop SetMapPosition(int mapX, int mapY)
-        {
-            _mapPosition.X = mapX;
-            _mapPosition.Y = mapY;
-
-            _x = _mapPosition.X * _cellW;
-            _y = _mapPosition.Y * _cellH;
-
-            return this;
-        }
-        public DragAndDrop SetCardSize(int sizeW, int sizeH)
-        {
-            _size.X = sizeW;
-            _size.Y = sizeH;
-            SetSize(_size.X * _cellW, _size.Y * _cellH);
-            return this;
-        }
-        public override Node Update(GameTime gameTime)
-        {
-            _isNearDropZone = false;
-            return base.Update(gameTime);
-        }
-
-    }
-
-    public class Card : DragAndDrop
-    {
         public Card(Arena arena, bool isDropped = true, float tempoBeforeSpawn = 0f) 
         {
-            _z = GetZIndexDragAndDrop();
+            _z = GetZIndexCard();
 
             _type = UID.Get<Card>();
             
@@ -186,7 +133,39 @@ namespace BattleSystem
         {
             return base.Init();
         }
+        public static void ResetZIndexCard()
+        {
+            _zIndex = 0;
+        }
+        public static float GetZIndexCard()
+        {
+            return _zIndex++;
+        }
+        public void IsNearDropZone(bool isNearDropZone)
+        {
+            _isNearDropZone = isNearDropZone;
+        }
+        public void SetDropZone(DropZone dropZone)
+        {
+            _curDropZone = dropZone;
+        }
+        public Card SetMapPosition(int mapX, int mapY)
+        {
+            _mapPosition.X = mapX;
+            _mapPosition.Y = mapY;
 
+            _x = _mapPosition.X * _cellW;
+            _y = _mapPosition.Y * _cellH;
+
+            return this;
+        }
+        public Card SetCardSize(int sizeW, int sizeH)
+        {
+            _size.X = sizeW;
+            _size.Y = sizeH;
+            SetSize(_size.X * _cellW, _size.Y * _cellH);
+            return this;
+        }
         public bool MoveToStep(Point mapStep, int durationMove = 6) // true if move possible
         {
             if (!_arena.IsCardInMap(this, mapStep) || _state == (int)States.IsMove)
@@ -367,7 +346,6 @@ namespace BattleSystem
             Misc.Log($"_isBacktoPrevPosition = {_isBackToPrevPosition}");
         }
         #endregion
-
         void IsNull(GameTime gameTime)
         {
             if (_timer.OnTimer((int)Timers.BeforeSpawn))
@@ -438,9 +416,7 @@ namespace BattleSystem
 
                 if (_isNearDropZone)
                 {
-                    //_isNearDropZone = false;
                     _curDropZone.SetContainerNode(this);
-
                     playSound = true;
                 }
 
@@ -576,6 +552,8 @@ namespace BattleSystem
             _isVisible = _state != (int)States.IsNull;
 
             RunState(gameTime);
+
+            _isNearDropZone = false;
 
             return base.Update(gameTime);
         }

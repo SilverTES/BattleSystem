@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Mugen.Animation;
 
 namespace BattleSystem
@@ -61,7 +60,6 @@ namespace BattleSystem
                 //Console.WriteLine("setdamage finish !");
                 OffDamage = true;
             }
-
 
             _animate.NextFrame();
         }

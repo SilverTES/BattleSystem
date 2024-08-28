@@ -18,20 +18,6 @@ using MonoGame.Aseprite;
 
 namespace BattleSystem
 {
-    //public struct Enum<T>
-    //{
-    //    static int _enumIndex = 0;
-    //    public static int Add()
-    //    {
-    //        return _enumIndex++;
-    //    }
-    //    public static int StartAt(int startIndex)
-    //    {
-    //        _enumIndex = startIndex;
-    //        return _enumIndex;
-    //    }
-    //}
-
     enum ButtonDown
     {
         A,
@@ -54,7 +40,6 @@ namespace BattleSystem
         BackFX,
         Count,
     }
-
 
     public class Game1 : Game
     {
@@ -158,8 +143,6 @@ namespace BattleSystem
         }
         protected override void LoadContent()
         {
-            //_aseFile = Content.Load<AsepriteFile>("Animations/slash");
-
             guiFont = ImGui.GetIO().Fonts.AddFontFromFileTTF("Content\\Fonts\\SuiSenerisRg.otf", 20);
             _imGuiRenderer.RebuildFontAtlas();
 
@@ -206,8 +189,6 @@ namespace BattleSystem
         }
         protected override void Update(GameTime gameTime)
         {
-            //_animatedSprite.Update(gameTime);
-
             FrameCounter.Update(gameTime);
 
             _mouseState = Mouse.GetState();
@@ -294,28 +275,26 @@ namespace BattleSystem
             ScreenManager.Draw(gameTime, (int)Layers.Debug, SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap);
 
             ScreenManager.BeginDraw((int)Layers.Gui, SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap);
-            ScreenManager.DrawLayer((int)Layers.Gui, gameTime);
-            _btnFullScreen.Draw(_batch, gameTime,(int)Layers.Gui);
+            
+                ScreenManager.DrawLayer((int)Layers.Gui, gameTime);
+                _btnFullScreen.Draw(_batch, gameTime,(int)Layers.Gui);
+            
             ScreenManager.EndDraw();
 
-
             ScreenManager.BeginShow(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearWrap);
-            ScreenManager.ShowLayer((int)Layers.BackFX, Color.White);
-            ScreenManager.ShowLayer((int)Layers.Main, Color.White);
-            ScreenManager.ShowLayer((int)Layers.Gui, Color.White);
-            ScreenManager.ShowLayer((int)Layers.FrontFX, Color.White);
 
-
-            if (_isShowImGuiDebug)
-            {
-                ScreenManager.ShowLayer((int)Layers.Debug, Color.White);
-                ScreenManager.ShowLayer((int)Layers.ImGui, Color.White);
-            }
-
-            FrameCounter.Draw(_batch, _fontMain, Color.Yellow, 10, 10);
+                ScreenManager.ShowLayer((int)Layers.BackFX, Color.White);
+                ScreenManager.ShowLayer((int)Layers.Main, Color.White);
+                ScreenManager.ShowLayer((int)Layers.Gui, Color.White);
+                ScreenManager.ShowLayer((int)Layers.FrontFX, Color.White);
+                if (_isShowImGuiDebug)
+                {
+                    ScreenManager.ShowLayer((int)Layers.Debug, Color.White);
+                    ScreenManager.ShowLayer((int)Layers.ImGui, Color.White);
+                }
+                FrameCounter.Draw(_batch, _fontMain, Color.Yellow, 10, 10);
 
             ScreenManager.EndShow();
-
 
             base.Draw(gameTime);
         }

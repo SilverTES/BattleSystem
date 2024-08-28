@@ -12,7 +12,9 @@ namespace BattleSystem
         static int _dropZoneIndex = 0;
         public readonly int _index;
         bool _isShow = true;
+
         public RectangleF _rectDropZone = new();
+
         private RectangleF _rectNearDropZone = new();
         private Node _curNodeInDropZone = null;
 
@@ -65,7 +67,7 @@ namespace BattleSystem
                     {
                         if (item._type == _droppableTypes[i])
                         {
-                            var dragAndDrop = item.This<DragAndDrop>();
+                            var dragAndDrop = item.This<Card>();
 
                             if (_curNodeInDropZone == null)
                                 if (!dragAndDrop.IsDropped)
@@ -141,7 +143,9 @@ namespace BattleSystem
             for (int i = 0; i < _zones.Count; i++)
             {
                 _zones[i].Update(gameTime, nodeToCheck);
+
             }
+
         }
 
         public void Draw(SpriteBatch batch)

@@ -9,6 +9,7 @@ namespace BattleSystem
 {
     public class Cell : PassLevel
     {
+        #region Attributes
 
         Arena _arena;
 
@@ -26,6 +27,7 @@ namespace BattleSystem
 
         Rectangle _rect;
 
+        #endregion
         public Cell()
         {
             _passLevel = 0;
