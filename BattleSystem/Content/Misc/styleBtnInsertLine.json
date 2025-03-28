@@ -1,0 +1,71 @@
+﻿{
+  "visible": "true",
+  "shadow": {
+    "visible": true,
+    "color": "black",
+    "alpha": 0.4,
+    "offset": {
+      "x": 2,
+      "y": 2
+    }
+  },
+
+  "bgColor": {
+    "Default": "#BADA55",
+    "Over": "#AA11FF",
+    "Press": "#BB22FF"
+  },
+
+  "textColor": {
+    "Default": "yellow",
+    "Over": "white"
+  },
+
+  "shape": {
+    "width": 240,
+    "height": 80,
+    "pivot": "LEFT"
+  },
+
+
+  "bgImage": {
+
+    "Default": {
+      "color": "white",
+      "alpha": 1.0,
+      "texture": "_texBtnInsertLine",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 80
+      }
+    },
+
+    "Press": {
+      "color": "white",
+      "alpha": 1.0,
+      "texture": "_texBtnInsertLine",
+      "rect": {
+        "x": 0,
+        "y": 160,
+        "width": 240,
+        "height": 80
+      }
+    },
+
+    "Over": {
+      "color": "white",
+      "alpha": 1.0,
+      "texture": "_texBtnInsertLine",
+      "rect": {
+        "x": 0,
+        "y": 80,
+        "width": 240,
+        "height": 80
+      }
+    }
+
+  }
+
+}
